@@ -1,0 +1,27 @@
+<UserControl x:Class="Halo.Desktop.Views.SettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Padding="22" VerticalScrollBarVisibility="Auto">
+    <StackPanel Width="560" HorizontalAlignment="Left">
+      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="这台客户端" FontWeight="SemiBold" FontSize="15"/>
+          <TextBlock x:Name="About" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="连接" FontWeight="SemiBold" FontSize="15"/>
+          <TextBlock x:Name="Conn" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+        <StackPanel>
+          <TextBlock Text="关于 Halo" FontWeight="SemiBold" FontSize="15"/>
+          <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"
+                     Text="Halo 是基于 VoCat 的个人界面与发行版，模组、IMS、WiFi Calling、eSIM 和代理栈来自 Vocat Project Authors。这个 Windows 客户端是独立的原生桌面程序：WPF 绘制界面，HttpClient 调 Halo API，不用浏览器控件去套 Web 控制台。"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

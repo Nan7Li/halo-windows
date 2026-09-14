@@ -1,0 +1,36 @@
+<UserControl x:Class="Halo.Desktop.Views.NetworkView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer Padding="22" VerticalScrollBarVisibility="Auto">
+    <StackPanel>
+      <TextBlock Text="出口与隧道" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,6"/>
+      <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,16"
+                 Text="代理绑定和 WireGuard 在 Halo 主机上执行，这台 Windows 客户端只负责查看与切换。"/>
+      <ItemsControl x:Name="Tunnels">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Style="{StaticResource Card}" Margin="0,0,0,10">
+              <DockPanel>
+                <Border DockPanel.Dock="Right" CornerRadius="12" Padding="10,4" VerticalAlignment="Center"
+                        Background="#2230D158">
+                  <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold"/>
+                </Border>
+                <StackPanel>
+                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
+                  <TextBlock Text="{Binding Endpoint}" Style="{StaticResource MutedText}" Margin="0,4,0,0"/>
+                </StackPanel>
+              </DockPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Border Style="{StaticResource Card}" Margin="0,8,0,0">
+        <StackPanel>
+          <TextBlock Text="说明" FontWeight="SemiBold"/>
+          <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"
+                     Text="Halo 的 SOCKS 出口、国家规则和 WG 隧道都跑在 Linux 主机。桌面端用来盯状态，而不是在本机再套一层 VPN。"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
