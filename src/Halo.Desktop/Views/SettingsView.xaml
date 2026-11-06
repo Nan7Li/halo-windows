@@ -1,27 +1,160 @@
 <UserControl x:Class="Halo.Desktop.Views.SettingsView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <ScrollViewer Padding="22" VerticalScrollBarVisibility="Auto">
-    <StackPanel Width="560" HorizontalAlignment="Left">
-      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
-        <StackPanel>
-          <TextBlock Text="这台客户端" FontWeight="SemiBold" FontSize="15"/>
-          <TextBlock x:Name="About" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Halo.Desktop.Controls">
+  <UserControl.Resources>
+    <!-- Accent swatch: filled circle; selected shows a white centre dot and an outer ring. -->
+    <Style x:Key="AccentDot" TargetType="RadioButton">
+      <Setter Property="GroupName" Value="accent"/>
+      <Setter Property="Margin" Value="3,0"/>
+      <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="RadioButton">
+            <Grid Width="22" Height="22" Background="Transparent">
+              <Ellipse x:Name="ring" Stroke="{TemplateBinding Background}" StrokeThickness="2" Opacity="0"/>
+              <Ellipse Width="16" Height="16" Fill="{TemplateBinding Background}"/>
+              <Ellipse Width="16" Height="16" Stroke="{DynamicResource LabelBrush}" StrokeThickness="0.5" Opacity="0.15"/>
+              <Ellipse x:Name="dot" Width="6" Height="6" Fill="White" Opacity="0"/>
+            </Grid>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsChecked" Value="True">
+                <Setter TargetName="ring" Property="Opacity" Value="0.5"/>
+                <Setter TargetName="dot" Property="Opacity" Value="1"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="Category" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+      <Setter Property="Height" Value="30"/>
+      <Setter Property="Padding" Value="6,0"/>
+      <Setter Property="c:Ui.CornerRadius" Value="{StaticResource R.Capsule28}"/>
+    </Style>
+  </UserControl.Resources>
+
+  <Grid Margin="16,4,16,16">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="200"/>
+      <ColumnDefinition Width="20"/>
+      <ColumnDefinition Width="*"/>
+    </Grid.ColumnDefinitions>
+
+    <!-- Categories, each with a coloured rounded symbol like System Settings. -->
+    <ListBox x:Name="Categories" ItemContainerStyle="{StaticResource Category}" SelectionChanged="CategoryChanged">
+      <ListBoxItem>
+        <StackPanel Orientation="Horizontal">
+          <Border Style="{StaticResource IconTile}" Background="{DynamicResource BlueBrush}">
+            <TextBlock Text="{x:Static c:Glyphs.Personalize}" Style="{StaticResource Text.Glyph}" FontSize="12" Foreground="White"/>
+          </Border>
+          <TextBlock Text="外观" Margin="10,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
-      </Border>
-      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
-        <StackPanel>
-          <TextBlock Text="连接" FontWeight="SemiBold" FontSize="15"/>
-          <TextBlock x:Name="Conn" Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+      </ListBoxItem>
+      <ListBoxItem>
+        <StackPanel Orientation="Horizontal">
+          <Border Style="{StaticResource IconTile}" Background="{DynamicResource GreenBrush}">
+            <TextBlock Text="{x:Static c:Glyphs.Link}" Style="{StaticResource Text.Glyph}" FontSize="12" Foreground="White"/>
+          </Border>
+          <TextBlock Text="连接" Margin="10,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
-      </Border>
-      <Border Style="{StaticResource Card}" Margin="0,0,0,12">
-        <StackPanel>
-          <TextBlock Text="关于 Halo" FontWeight="SemiBold" FontSize="15"/>
-          <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"
-                     Text="Halo 是基于 VoCat 的个人界面与发行版，模组、IMS、WiFi Calling、eSIM 和代理栈来自 Vocat Project Authors。这个 Windows 客户端是独立的原生桌面程序：WPF 绘制界面，HttpClient 调 Halo API，不用浏览器控件去套 Web 控制台。"/>
+      </ListBoxItem>
+      <ListBoxItem>
+        <StackPanel Orientation="Horizontal">
+          <Border Style="{StaticResource IconTile}" Background="#FF8E8E93">
+            <TextBlock Text="{x:Static c:Glyphs.Info}" Style="{StaticResource Text.Glyph}" FontSize="12" Foreground="White"/>
+          </Border>
+          <TextBlock Text="关于" Margin="10,0,0,0" VerticalAlignment="Center"/>
         </StackPanel>
-      </Border>
-    </StackPanel>
-  </ScrollViewer>
+      </ListBoxItem>
+    </ListBox>
+
+    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+      <Grid MaxWidth="680" HorizontalAlignment="Stretch">
+
+        <!-- ===================== Appearance -->
+        <StackPanel x:Name="AppearancePane">
+          <TextBlock Text="外观" Style="{StaticResource Text.Title2}" Margin="12,0,0,14"/>
+          <c:ListSection>
+            <c:ListRow Title="外观">
+              <c:SegmentedControl x:Name="ThemePick" Width="240" SelectionChanged="ThemeChanged">
+                <ListBoxItem Content="浅色"/>
+                <ListBoxItem Content="深色"/>
+                <ListBoxItem Content="跟随系统"/>
+              </c:SegmentedControl>
+            </c:ListRow>
+            <c:ListRow Title="强调色">
+              <StackPanel x:Name="AccentRow" Orientation="Horizontal"/>
+            </c:ListRow>
+          </c:ListSection>
+
+          <c:ListSection Header="Liquid Glass" Footer="控制侧栏、工具栏和菜单玻璃的透明度。玻璃只用在导航和控件层，内容区始终是不透明的分组背景。">
+            <c:ListRow Title="玻璃质感">
+              <Grid Width="260">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="透明" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+                <Slider x:Name="GlassSlider" Grid.Column="1" Minimum="0" Maximum="1" SmallChange="0.05" LargeChange="0.25"
+                        Margin="10,0" ValueChanged="GlassChanged"/>
+                <TextBlock Grid.Column="2" Text="着色" Style="{StaticResource Text.Caption}" VerticalAlignment="Center"/>
+              </Grid>
+            </c:ListRow>
+          </c:ListSection>
+
+          <c:ListSection Header="辅助功能" Footer="“减弱”会去掉位移、缩放和弹跳，只保留淡入淡出；“关闭”会停用所有动画。">
+            <c:ListRow Title="动态效果">
+              <c:SegmentedControl x:Name="MotionPick" Width="240" SelectionChanged="MotionChanged">
+                <ListBoxItem Content="完整"/>
+                <ListBoxItem Content="减弱"/>
+                <ListBoxItem Content="关闭"/>
+              </c:SegmentedControl>
+            </c:ListRow>
+            <c:ListRow Title="粗体文本" Subtitle="所有文字的字重提高一级">
+              <c:IosSwitch x:Name="BoldSwitch" Click="BoldChanged"/>
+            </c:ListRow>
+          </c:ListSection>
+        </StackPanel>
+
+        <!-- ===================== Connection -->
+        <StackPanel x:Name="ConnectionPane" Visibility="Collapsed">
+          <TextBlock Text="连接" Style="{StaticResource Text.Title2}" Margin="12,0,0,14"/>
+          <c:ListSection>
+            <c:ListRow Title="实例"><TextBlock x:Name="ConnServer" TextTrimming="CharacterEllipsis"/></c:ListRow>
+            <c:ListRow Title="状态"><TextBlock x:Name="ConnState"/></c:ListRow>
+            <c:ListRow Title="Halo 版本"><TextBlock x:Name="ConnVersion"/></c:ListRow>
+            <c:ListRow Title="账户"><TextBlock x:Name="ConnUser"/></c:ListRow>
+          </c:ListSection>
+          <c:ListSection Footer="退出后会回到登录页；本机只保存实例地址和用户名，不保存密码。">
+            <c:ListRow Title="退出登录">
+              <Button Content="退出登录…" Click="SignOut"/>
+            </c:ListRow>
+          </c:ListSection>
+        </StackPanel>
+
+        <!-- ===================== About -->
+        <StackPanel x:Name="AboutPane" Visibility="Collapsed">
+          <StackPanel HorizontalAlignment="Center" Margin="0,8,0,20">
+            <Border Width="64" Height="64" CornerRadius="14" HorizontalAlignment="Center">
+              <Border.Background>
+                <ImageBrush ImageSource="pack://application:,,,/Assets/halo.png" Stretch="UniformToFill" RenderOptions.BitmapScalingMode="HighQuality"/>
+              </Border.Background>
+            </Border>
+            <TextBlock Text="Halo Desktop" Style="{StaticResource Text.Title2}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+            <TextBlock x:Name="AboutVersion" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Center" Margin="0,2,0,0"/>
+          </StackPanel>
+          <c:ListSection>
+            <c:ListRow Title="界面"><TextBlock Text="原生 WPF · .NET 8"/></c:ListRow>
+            <c:ListRow Title="窗口材质"><TextBlock x:Name="AboutBackdrop"/></c:ListRow>
+            <c:ListRow Title="显示缩放"><TextBlock x:Name="AboutDpi"/></c:ListRow>
+            <c:ListRow Title="系统"><TextBlock x:Name="AboutOs"/></c:ListRow>
+          </c:ListSection>
+          <TextBlock Style="{StaticResource Text.Caption}" TextWrapping="Wrap" Margin="12,0"
+                     Text="Halo 是基于 VoCat 的个人界面与发行版；模组、IMS、WiFi Calling、eSIM 和代理栈来自 Vocat Project Authors。这个客户端用 WPF 绘制界面，通过 HTTP API 与 Halo 通信，不是网页套壳。"/>
+        </StackPanel>
+      </Grid>
+    </ScrollViewer>
+  </Grid>
 </UserControl>

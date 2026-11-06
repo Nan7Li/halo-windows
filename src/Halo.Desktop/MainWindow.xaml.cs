@@ -174,7 +174,9 @@ public partial class MainWindow : Window
         _poll.Start();
     }
 
-    void LogoutClick(object sender, RoutedEventArgs e)
+    void LogoutClick(object sender, RoutedEventArgs e) => SignOut();
+
+    internal void SignOut()
     {
         _poll.Stop();
         _s.Client.SignOut();
