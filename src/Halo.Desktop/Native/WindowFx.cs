@@ -32,6 +32,15 @@ internal static class WindowFx
     [StructLayout(LayoutKind.Sequential)]
     struct Margins { public int Left, Right, Top, Bottom; }
 
+    const int GWL_STYLE = -16;
+    const long WS_SYSMENU = 0x00080000;
+
+    [DllImport("user32.dll", EntryPoint = "GetWindowLongPtrW")]
+    static extern IntPtr GetWindowLongPtr(IntPtr hwnd, int index);
+
+    [DllImport("user32.dll", EntryPoint = "SetWindowLongPtrW")]
+    static extern IntPtr SetWindowLongPtr(IntPtr hwnd, int index, IntPtr value);
+
     static int Build => Environment.OSVersion.Version.Build;
 
     /// <summary>True when the OS can draw Mica (Windows 11, build 22000+).</summary>
@@ -56,6 +65,11 @@ internal static class WindowFx
                 target.BackgroundColor = Colors.Transparent;
             var m = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
             DwmExtendFrameIntoClientArea(hwnd, ref m);
+
+            // With the frame extended over the client area DWM would also paint its own
+            // min/max/close under ours; without WS_SYSMENU it does not. Alt+F4 still closes.
+            var style = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
+            SetWindowLongPtr(hwnd, GWL_STYLE, new IntPtr(style & ~WS_SYSMENU));
 
             int hr;
             if (Build >= 22621)

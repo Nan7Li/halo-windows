@@ -25,11 +25,67 @@ internal static class Shots
         (HaloPage.Settings, "settings"),
     ];
 
-    public static async Task Run(MainWindow w, string dir)
+    /// <summary>
+    /// <c>--anim</c>: samples the IosSwitch thumb and SegmentedControl indicator every frame for
+    /// each motion level and writes anim.txt, so the spring/overshoot and the Reduced/Off
+    /// behaviour can be checked numerically.
+    /// </summary>
+    public static async Task Anim(MainWindow w, string dir)
+    {
+        Directory.CreateDirectory(dir);
+        var prefs = AppState.Current.Prefs;
+        await w.EnterPreviewAsync();
+        var log = new System.Text.StringBuilder();
+        foreach (var level in new[] { "full", "reduced", "off" })
+        {
+            prefs.Motion = level;
+            ThemeManager.Apply(prefs);
+
+            w.ShowPage(HaloPage.Settings, animate: false);
+            await Settle(w);
+            var sw = (Controls.IosSwitch)w.SetPage.FindName("BoldSwitch");
+            var thumb = (FrameworkElement)sw.Template.FindName("PART_Thumb", sw);
+            var on = (FrameworkElement)sw.Template.FindName("PART_On", sw);
+            sw.IsChecked = false;
+            await Settle(w);
+            log.AppendLine($"[{level}] IosSwitch off->on (travel 21): t_ms thumbX greenOpacity");
+            sw.IsChecked = true;
+            await Sample(w, log, () => $"{((TranslateTransform)thumb.RenderTransform).X:0.00} {on.Opacity:0.00}");
+            sw.IsChecked = false;
+
+            w.ShowPage(HaloPage.Logs, animate: false);
+            await Settle(w);
+            var seg = (Controls.SegmentedControl)w.LogsPage.FindName("LevelPick");
+            var ind = (FrameworkElement)seg.Template.FindName("PART_Indicator", seg);
+            seg.SelectedIndex = 0;
+            await Settle(w);
+            var segW = (seg.ActualWidth - 4) / seg.Items.Count;
+            log.AppendLine($"[{level}] Segmented 0->2 (target {2 * segW:0.00}): t_ms indicatorX opacity");
+            seg.SelectedIndex = 2;
+            await Sample(w, log, () => $"{((TranslateTransform)ind.RenderTransform).X:0.00} {ind.Opacity:0.00}");
+            seg.SelectedIndex = 0;
+        }
+        File.WriteAllText(Path.Combine(dir, "anim.txt"), log.ToString());
+        Application.Current.Shutdown();
+    }
+
+    static async Task Sample(Window w, System.Text.StringBuilder log, Func<string> read)
+    {
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        while (sw.ElapsedMilliseconds < 420)
+        {
+            await w.Dispatcher.InvokeAsync(() => { }, DispatcherPriority.Render);
+            log.AppendLine($"  {sw.ElapsedMilliseconds,4} {read()}");
+            await Task.Delay(15);
+        }
+    }
+
+    public static async Task Run(MainWindow w, string dir, bool bold = false)
     {
         Directory.CreateDirectory(dir);
         var prefs = AppState.Current.Prefs;
         prefs.Motion = "off";
+        prefs.BoldText = bold;
         w.WindowState = WindowState.Normal;
         w.Width = 1180; w.Height = 760;
         await Settle(w);

@@ -20,6 +20,9 @@ public partial class App : Application
             MessageBox.Show(args.Exception.Message, "Halo", MessageBoxButton.OK, MessageBoxImage.Warning);
             args.Handled = true;
         };
+        // --appearance light|dark overrides the saved preference for this run only (screenshots).
+        var a = Array.IndexOf(e.Args, "--appearance");
+        if (a >= 0 && a + 1 < e.Args.Length) AppState.Current.Prefs.Appearance = e.Args[a + 1];
         ThemeManager.Apply(AppState.Current.Prefs);
         base.OnStartup(e);
 
@@ -31,7 +34,9 @@ public partial class App : Application
             async void Once(object? s, EventArgs _)
             {
                 Activated -= Once;
-                if (MainWindow is MainWindow w) await Dev.Shots.Run(w, dir);
+                if (MainWindow is not MainWindow w) return;
+                if (e.Args.Contains("--anim")) await Dev.Shots.Anim(w, dir);
+                else await Dev.Shots.Run(w, dir, bold: e.Args.Contains("--bold"));
             }
         }
     }

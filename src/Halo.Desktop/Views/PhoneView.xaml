@@ -60,7 +60,7 @@
     </Grid>
 
     <!-- Dial pad -->
-    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+    <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0" Margin="0,0,-10,0">
       <c:SquircleBorder Style="{StaticResource Card.Group}" Padding="14,14,14,10">
         <StackPanel>
           <ComboBox x:Name="DevicePick" SelectionChanged="DeviceChanged"/>
