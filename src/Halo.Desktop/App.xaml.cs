@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Media;
-using System.Windows.Threading;
+using Halo.Desktop.Services;
 
 namespace Halo.Desktop;
 
@@ -14,6 +14,7 @@ public partial class App : Application
             MessageBox.Show(args.Exception.Message, "Halo", MessageBoxButton.OK, MessageBoxImage.Warning);
             args.Handled = true;
         };
+        ThemeManager.Apply(AppState.Current.Prefs);
         base.OnStartup(e);
     }
 }

@@ -5,6 +5,10 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
+        <!-- [0] palette, replaced at runtime by ThemeManager. -->
+        <ResourceDictionary Source="Themes/Light.xaml"/>
+        <!-- Transitional: old keys still used by pages that have not been migrated yet. -->
+        <ResourceDictionary Source="Themes/Legacy.xaml"/>
         <ResourceDictionary Source="Themes/HaloTheme.xaml"/>
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>

@@ -1,0 +1,41 @@
+<!-- Type, weight and shape tokens. Sizes follow macOS (13pt body, 11pt minimum). -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+  <FontFamily x:Key="UiFont">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI</FontFamily>
+  <FontFamily x:Key="DisplayFont">Segoe UI Variable Display, Segoe UI, Microsoft YaHei UI</FontFamily>
+  <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Microsoft YaHei UI</FontFamily>
+  <!-- Fluent icons on Windows 11, MDL2 (same code points) on Windows 10. Vector glyphs, crisp at any DPI. -->
+  <FontFamily x:Key="IconFont">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+  <sys:Double x:Key="FS.Caption">11</sys:Double>
+  <sys:Double x:Key="FS.Mono">12</sys:Double>
+  <sys:Double x:Key="FS.Body">13</sys:Double>
+  <sys:Double x:Key="FS.Title3">15</sys:Double>
+  <sys:Double x:Key="FS.Title2">17</sys:Double>
+  <sys:Double x:Key="FS.Title1">22</sys:Double>
+  <sys:Double x:Key="FS.Large">28</sys:Double>
+
+  <!-- Overwritten by ThemeManager when "Bold Text" is on (each steps up one weight). -->
+  <FontWeight x:Key="W.Regular">Normal</FontWeight>
+  <FontWeight x:Key="W.Medium">Medium</FontWeight>
+  <FontWeight x:Key="W.Semibold">SemiBold</FontWeight>
+
+  <!-- Corner radii. Large surfaces use SquircleBorder (continuous corners) with the D.* values. -->
+  <CornerRadius x:Key="R.Menu">6</CornerRadius>
+  <CornerRadius x:Key="R.Control">10</CornerRadius>
+  <CornerRadius x:Key="R.Card">10</CornerRadius>
+  <CornerRadius x:Key="R.Group">14</CornerRadius>
+  <CornerRadius x:Key="R.Dialog">18</CornerRadius>
+  <CornerRadius x:Key="R.Thumb">8</CornerRadius>
+  <CornerRadius x:Key="R.ThumbLarge">16</CornerRadius>
+  <CornerRadius x:Key="R.Capsule28">14</CornerRadius>
+
+  <sys:Double x:Key="D.Menu">6</sys:Double>
+  <sys:Double x:Key="D.MenuPanel">11</sys:Double>  <!-- 6 item radius + 5 padding (concentric) -->
+  <sys:Double x:Key="D.Card">10</sys:Double>
+  <sys:Double x:Key="D.Group">14</sys:Double>
+  <sys:Double x:Key="D.Dialog">18</sys:Double>
+  <sys:Double x:Key="D.Sidebar">22</sys:Double>    <!-- 14 capsule row + 8 padding (concentric) -->
+</ResourceDictionary>
