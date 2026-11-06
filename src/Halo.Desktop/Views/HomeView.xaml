@@ -64,7 +64,7 @@
                   <TextBlock Margin="0,8,0,0" FontSize="12" Foreground="{StaticResource MutedBrush}">
                     <Run Text="{Binding Mode}"/>
                     <Run Text=" · "/>
-                    <Run Text="{Binding SignalText}"/>
+                    <Run Text="{Binding SignalText, Mode=OneWay}"/>
                     <Run Text=" · "/>
                     <Run Text="{Binding PublicIp}"/>
                   </TextBlock>

@@ -232,9 +232,13 @@
             <Trigger Property="Text" Value="">
               <Setter TargetName="ph" Property="Visibility" Value="Visible"/>
             </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
+            <MultiTrigger>
+              <MultiTrigger.Conditions>
+                <Condition Property="IsKeyboardFocused" Value="True"/>
+                <Condition Property="c:Ui.NoFocusRing" Value="False"/>
+              </MultiTrigger.Conditions>
               <Setter TargetName="ring" Property="Opacity" Value="0.45"/>
-            </Trigger>
+            </MultiTrigger>
             <Trigger Property="IsEnabled" Value="False">
               <Setter Property="Opacity" Value="0.4"/>
             </Trigger>
@@ -257,6 +261,7 @@
     <Setter Property="Padding" Value="0"/>
     <Setter Property="MinWidth" Value="180"/>
     <Setter Property="c:Ui.CornerRadius" Value="4"/>
+    <Setter Property="c:Ui.NoFocusRing" Value="True"/>
   </Style>
   <!-- Messages composer: capsule with hairline rim. -->
   <Style x:Key="Input.Composer" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
@@ -302,9 +307,13 @@
             <Trigger Property="c:Ui.IsEmpty" Value="True">
               <Setter TargetName="ph" Property="Visibility" Value="Visible"/>
             </Trigger>
-            <Trigger Property="IsKeyboardFocused" Value="True">
+            <MultiTrigger>
+              <MultiTrigger.Conditions>
+                <Condition Property="IsKeyboardFocused" Value="True"/>
+                <Condition Property="c:Ui.NoFocusRing" Value="False"/>
+              </MultiTrigger.Conditions>
               <Setter TargetName="ring" Property="Opacity" Value="0.45"/>
-            </Trigger>
+            </MultiTrigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value>
@@ -316,6 +325,7 @@
     <Setter Property="MinWidth" Value="180"/>
     <Setter Property="HorizontalContentAlignment" Value="Right"/>
     <Setter Property="c:Ui.CornerRadius" Value="4"/>
+    <Setter Property="c:Ui.NoFocusRing" Value="True"/>
   </Style>
 
   <!-- ===================================================== Scrolling === -->

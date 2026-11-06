@@ -93,6 +93,8 @@ public partial class MessagesView : UserControl
         }
     }
 
+    public void NewMessage() => NewSms(this, new RoutedEventArgs());
+
     void NewSms(object sender, RoutedEventArgs e)
     {
         var owner = Window.GetWindow(this);

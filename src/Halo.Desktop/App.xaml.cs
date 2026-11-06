@@ -16,5 +16,17 @@ public partial class App : Application
         };
         ThemeManager.Apply(AppState.Current.Prefs);
         base.OnStartup(e);
+
+        var i = Array.IndexOf(e.Args, "--shots");
+        if (i >= 0 && i + 1 < e.Args.Length)
+        {
+            var dir = e.Args[i + 1];
+            Activated += Once;
+            async void Once(object? s, EventArgs _)
+            {
+                Activated -= Once;
+                if (MainWindow is MainWindow w) await Dev.Shots.Run(w, dir);
+            }
+        }
     }
 }

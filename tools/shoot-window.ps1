@@ -1,6 +1,8 @@
-# Captures each page of the pre-redesign build in preview mode via UI Automation.
-# Usage: powershell -File tools\shoot-before.ps1 -Exe <path to Halo.exe> -Out docs\screenshots\before
-param([string]$Exe, [string]$Out)
+﻿# Captures the real window (including the DWM Mica backdrop) for each page in preview mode via UI Automation.
+# Usage: powershell -File tools\shoot-window.ps1 -Exe <Halo.exe> -Out <dir> [-Preview <button name>] [-Nav <comma list>] [-Names <comma list>]
+param([string]$Exe, [string]$Out, [string]$Preview = "本地预览（不连接实例）",
+      [string]$Nav = "主页,消息,电话,设备,网络,日志,设置",
+      [string]$Names = "home,messages,phone,devices,network,logs,settings")
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes, System.Drawing, System.Windows.Forms
 Add-Type @"
 using System; using System.Runtime.InteropServices;
@@ -16,8 +18,12 @@ for ($i = 0; $i -lt 40 -and -not $win; $i++) {
   Start-Sleep -Milliseconds 250; $p.Refresh()
   if ($p.MainWindowHandle -ne 0) { $win = $AE::FromHandle($p.MainWindowHandle) }
 }
-function Find($name) {
+function Find($name, $type = $null) {
   $c = New-Object System.Windows.Automation.PropertyCondition($AE::NameProperty, $name)
+  if ($type) {
+    $t = New-Object System.Windows.Automation.PropertyCondition($AE::ControlTypeProperty, $type)
+    $c = New-Object System.Windows.Automation.AndCondition($c, $t)
+  }
   $win.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $c)
 }
 function Dismiss {
@@ -42,11 +48,12 @@ function Shot($file) {
   $g.CopyFromScreen($r.L, $r.T, 0, 0, $bmp.Size); $bmp.Save((Join-Path $Out $file)); $g.Dispose(); $bmp.Dispose()
 }
 Shot "00-login.png"
-(Find "先看界面（本地预览）").GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
+(Find $Preview).GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
 $n = 1
-foreach ($nav in "今天","消息","电话","模组","链路","现场","设置") {
-  $e = Find $nav
+$navs = $Nav.Split(","); $files = $Names.Split(",")
+for ($k = 0; $k -lt $navs.Length; $k++) {
+  $e = Find $navs[$k] ([System.Windows.Automation.ControlType]::RadioButton)
   if ($e) { $e.GetCurrentPattern([System.Windows.Automation.SelectionItemPattern]::Pattern).Select() }
-  Shot ("{0:00}-{1}.png" -f $n, $nav); $n++
+  Shot ("{0:00}-{1}.png" -f $n, $files[$k]); $n++
 }
 $p.Kill()

@@ -27,7 +27,10 @@ public class Hairline : FrameworkElement
         SnapsToDevicePixels = true;
     }
 
-    double Px => Vertical ? 1 / VisualTreeHelper.GetDpi(this).DpiScaleX : 1 / VisualTreeHelper.GetDpi(this).DpiScaleY;
+    /// <summary>Screenshot harness only: render as if the monitor had this scale factor.</summary>
+    internal static double? ScaleOverride { get; set; }
+
+    double Px => 1 / (ScaleOverride ?? (Vertical ? VisualTreeHelper.GetDpi(this).DpiScaleX : VisualTreeHelper.GetDpi(this).DpiScaleY));
 
     protected override Size MeasureOverride(Size availableSize) =>
         Vertical ? new Size(Px, 0) : new Size(0, Px);

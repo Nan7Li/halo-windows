@@ -31,17 +31,6 @@
   <FontFamily x:Key="TextFont">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI</FontFamily>
   <FontFamily x:Key="MonoFont">Cascadia Mono, Consolas, Microsoft YaHei UI</FontFamily>
 
-  <Style TargetType="Window">
-    <Setter Property="FontFamily" Value="{StaticResource TextFont}"/>
-    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-    <Setter Property="Background" Value="Transparent"/>
-  </Style>
-
-  <Style TargetType="TextBlock">
-    <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
-    <Setter Property="FontFamily" Value="{StaticResource TextFont}"/>
-  </Style>
-
   <Style x:Key="MutedText" TargetType="TextBlock">
     <Setter Property="Foreground" Value="{StaticResource MutedBrush}"/>
     <Setter Property="FontSize" Value="12"/>

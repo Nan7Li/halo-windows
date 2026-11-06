@@ -22,6 +22,12 @@ public static class Ui
     public static CornerRadius GetCornerRadius(DependencyObject o) => (CornerRadius)o.GetValue(CornerRadiusProperty);
     public static void SetCornerRadius(DependencyObject o, CornerRadius v) => o.SetValue(CornerRadiusProperty, v);
 
+    /// <summary>Inline form fields (inside a list row) show no focus ring, like System Settings.</summary>
+    public static readonly DependencyProperty NoFocusRingProperty = DependencyProperty.RegisterAttached(
+        "NoFocusRing", typeof(bool), typeof(Ui), new FrameworkPropertyMetadata(false));
+    public static bool GetNoFocusRing(DependencyObject o) => (bool)o.GetValue(NoFocusRingProperty);
+    public static void SetNoFocusRing(DependencyObject o, bool v) => o.SetValue(NoFocusRingProperty, v);
+
     /// <summary>Red text / red highlight for destructive menu items and buttons.</summary>
     public static readonly DependencyProperty IsDestructiveProperty = DependencyProperty.RegisterAttached(
         "IsDestructive", typeof(bool), typeof(Ui), new FrameworkPropertyMetadata(false));
