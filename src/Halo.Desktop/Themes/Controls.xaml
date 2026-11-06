@@ -10,6 +10,24 @@
   </ResourceDictionary.MergedDictionaries>
 
   <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+  <c:MissedCallConverter x:Key="IsMissed"/>
+  <c:CallGlyphConverter x:Key="CallGlyph"/>
+  <c:CallDescriptionConverter x:Key="CallDesc"/>
+  <c:LogKindConverter x:Key="LogKind"/>
+  <c:UpperConverter x:Key="Upper"/>
+  <c:EmptyToCollapsedConverter x:Key="EmptyToCollapsed"/>
+
+  <!-- Online/offline dot: green or red from the semantic palette. -->
+  <Style x:Key="StatusDot" TargetType="Ellipse">
+    <Setter Property="Width" Value="8"/>
+    <Setter Property="Height" Value="8"/>
+    <Setter Property="Fill" Value="{DynamicResource RedBrush}"/>
+    <Style.Triggers>
+      <DataTrigger Binding="{Binding Healthy}" Value="True">
+        <Setter Property="Fill" Value="{DynamicResource GreenBrush}"/>
+      </DataTrigger>
+    </Style.Triggers>
+  </Style>
 
   <!-- ===================================================== Text ======== -->
   <Style x:Key="Text.Caption" TargetType="TextBlock">
@@ -754,6 +772,102 @@
     </Setter>
   </Style>
 
+  <!-- ===================================================== Control tiles (Control Center style) -->
+  <Style x:Key="Tile.Toggle" TargetType="ToggleButton">
+    <Setter Property="Foreground" Value="{DynamicResource LabelBrush}"/>
+    <Setter Property="Height" Value="60"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="ToggleButton">
+          <Grid>
+            <c:SquircleBorder CornerRadius="{StaticResource D.Card}" Background="{DynamicResource Grouped2Brush}"/>
+            <c:SquircleBorder x:Name="ov" CornerRadius="{StaticResource D.Card}" Background="{DynamicResource LabelBrush}" Opacity="0"/>
+            <Grid Margin="10,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <Border x:Name="circle" Width="32" Height="32" CornerRadius="16" Background="{DynamicResource Fill3Brush}">
+                <TextBlock x:Name="gl" Text="{TemplateBinding Tag}" Style="{StaticResource Text.Glyph}" FontSize="15" Foreground="{DynamicResource LabelBrush}"/>
+              </Border>
+              <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                <ContentPresenter TextElement.FontWeight="{DynamicResource W.Medium}">
+                  <ContentPresenter.Resources>
+                    <Style TargetType="TextBlock"><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style>
+                  </ContentPresenter.Resources>
+                </ContentPresenter>
+                <TextBlock Text="{TemplateBinding c:Ui.Detail}" Style="{StaticResource Text.Caption}" TextTrimming="CharacterEllipsis"/>
+              </StackPanel>
+            </Grid>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsChecked" Value="True">
+              <Setter TargetName="circle" Property="Background" Value="{DynamicResource AccentBrush}"/>
+              <Setter TargetName="gl" Property="Foreground" Value="White"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="ov" Property="Opacity" Value="0.04"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="ov" Property="Opacity" Value="0.08"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Opacity" Value="0.4"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+  <Style x:Key="Tile.Action" TargetType="Button">
+    <Setter Property="Foreground" Value="{DynamicResource LabelBrush}"/>
+    <Setter Property="Height" Value="60"/>
+    <Setter Property="FocusVisualStyle" Value="{StaticResource FocusRing}"/>
+    <Setter Property="Template">
+      <Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Grid>
+            <c:SquircleBorder CornerRadius="{StaticResource D.Card}" Background="{DynamicResource Grouped2Brush}"/>
+            <c:SquircleBorder x:Name="ov" CornerRadius="{StaticResource D.Card}" Background="{DynamicResource LabelBrush}" Opacity="0"/>
+            <Grid Margin="10,0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <Border Width="32" Height="32" CornerRadius="16" Background="{DynamicResource Fill3Brush}">
+                <TextBlock x:Name="gl" Text="{TemplateBinding Tag}" Style="{StaticResource Text.Glyph}" FontSize="15" Foreground="{DynamicResource LabelBrush}"/>
+              </Border>
+              <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                <ContentPresenter x:Name="cp" TextElement.FontWeight="{DynamicResource W.Medium}">
+                  <ContentPresenter.Resources>
+                    <Style TargetType="TextBlock"><Setter Property="TextTrimming" Value="CharacterEllipsis"/></Style>
+                  </ContentPresenter.Resources>
+                </ContentPresenter>
+                <TextBlock Text="{TemplateBinding c:Ui.Detail}" Style="{StaticResource Text.Caption}" TextTrimming="CharacterEllipsis"/>
+              </StackPanel>
+            </Grid>
+          </Grid>
+          <ControlTemplate.Triggers>
+            <Trigger Property="c:Ui.IsDestructive" Value="True">
+              <Setter TargetName="gl" Property="Foreground" Value="{DynamicResource RedBrush}"/>
+              <Setter TargetName="cp" Property="TextElement.Foreground" Value="{DynamicResource RedBrush}"/>
+            </Trigger>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="ov" Property="Opacity" Value="0.04"/>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True">
+              <Setter TargetName="ov" Property="Opacity" Value="0.08"/>
+            </Trigger>
+            <Trigger Property="IsEnabled" Value="False">
+              <Setter Property="Opacity" Value="0.4"/>
+            </Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value>
+    </Setter>
+  </Style>
+
   <!-- ===================================================== Notice bars = -->
   <Style x:Key="Banner.Base" TargetType="Border">
     <Setter Property="CornerRadius" Value="{StaticResource R.Card}"/>
@@ -864,14 +978,15 @@
 
   <Style TargetType="c:ListRow">
     <Setter Property="Focusable" Value="False"/>
-    <Setter Property="Foreground" Value="{DynamicResource LabelBrush}"/>
+    <!-- Row content (the value on the right) inherits through the logical tree, so the row's own
+         foreground is the secondary colour and the title sets the primary colour explicitly. -->
+    <Setter Property="Foreground" Value="{DynamicResource Label2Brush}"/>
     <Setter Property="HorizontalContentAlignment" Value="Right"/>
     <Setter Property="Template">
       <Setter.Value>
         <ControlTemplate TargetType="c:ListRow">
           <Grid MinHeight="38" Background="Transparent">
             <Border x:Name="hl" Background="{DynamicResource HoverFillBrush}" Opacity="0"/>
-            <c:Hairline x:Name="PART_Separator" VerticalAlignment="Top" Visibility="Collapsed"/>
             <Grid Margin="12,0">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -879,17 +994,19 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
               </Grid.ColumnDefinitions>
+              <!-- Separator starts where the title text starts and runs to the trailing edge. -->
+              <c:Hairline x:Name="PART_Separator" Grid.Column="1" Grid.ColumnSpan="3" VerticalAlignment="Top"
+                          Margin="0,0,-12,0" Visibility="Collapsed"/>
               <Border x:Name="tile" Style="{StaticResource IconTile}" Background="{TemplateBinding GlyphBackground}" Margin="0,0,10,0" VerticalAlignment="Center">
                 <TextBlock Text="{TemplateBinding Glyph}" Style="{StaticResource Text.Glyph}" FontSize="12" Foreground="{TemplateBinding GlyphForeground}"/>
               </Border>
               <ContentPresenter x:Name="lead" Content="{TemplateBinding Leading}" Margin="0,0,10,0" VerticalAlignment="Center"/>
               <StackPanel x:Name="PART_Text" Grid.Column="1" VerticalAlignment="Center" Margin="0,7">
-                <TextBlock x:Name="title" Text="{TemplateBinding Title}" TextTrimming="CharacterEllipsis"/>
+                <TextBlock x:Name="title" Text="{TemplateBinding Title}" TextTrimming="CharacterEllipsis" Foreground="{DynamicResource LabelBrush}"/>
                 <TextBlock x:Name="sub" Text="{TemplateBinding Subtitle}" Style="{StaticResource Text.Caption}" TextTrimming="CharacterEllipsis" Margin="0,1,0,0"/>
               </StackPanel>
               <ContentPresenter Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center"
-                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                TextElement.Foreground="{DynamicResource Label2Brush}"/>
+                                HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"/>
               <TextBlock x:Name="chev" Grid.Column="3" Text="{x:Static c:Glyphs.ChevronRight}" FontFamily="{StaticResource IconFont}"
                          FontSize="10" Foreground="{DynamicResource Label3Brush}" VerticalAlignment="Center" Margin="8,0,0,0" Visibility="Collapsed"/>
             </Grid>

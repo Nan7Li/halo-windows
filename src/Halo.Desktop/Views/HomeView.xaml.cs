@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 using Halo.Desktop.Services;
 
@@ -9,21 +10,34 @@ public partial class HomeView : UserControl
 
     public void Bind(AppState s)
     {
-        Hello.Text = s.Greeting;
-        HelloSub.Text = s.Client.Preview
-            ? "这是桌面端预览，连上 Halo 实例后这里会变成真实射频数据。"
-            : $"{s.Server} · {s.Version}";
+        PreviewBanner.Visibility = s.Client.Preview ? Visibility.Visible : Visibility.Collapsed;
+
         OnlineText.Text = $"{s.Online}";
-        OnlineSub.Text = $"共 {s.Devices.Count} 台";
+        OnlineTotal.Text = $"/ {s.Devices.Count}";
+        DeviceList.ItemsSource = s.Devices.Take(4).ToList();
+
+        RxText.Text = "↓ " + Rate(s.Host.Rx);
+        TxText.Text = "↑ " + Rate(s.Host.Tx);
+        BoardText.Text = string.IsNullOrWhiteSpace(s.Host.Board) || s.Host.Board == "—" ? s.Server : s.Host.Board;
+
+        TaskList.ItemsSource = s.Tasks.Take(4).ToList();
+        NoTasks.Visibility = s.Tasks.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        CpuModel.Text = string.IsNullOrWhiteSpace(s.Host.CpuModel) ? "" : s.Host.CpuModel;
+        CpuRing.Value = s.Host.Cpu;
         CpuText.Text = $"{s.Host.Cpu:0}%";
-        CpuBar.Value = Math.Clamp(s.Host.Cpu, 0, 100);
+        MemRing.Value = s.Host.Memory;
         MemText.Text = $"{s.Host.Memory:0}%";
-        MemSub.Text = s.Host.MemoryText;
-        NetText.Text = $"↓ {Kb(s.Host.Rx)}   ↑ {Kb(s.Host.Tx)}";
-        BoardText.Text = string.IsNullOrWhiteSpace(s.Host.CpuModel) ? "—" : s.Host.CpuModel;
-        DeviceList.ItemsSource = s.Devices;
-        TaskList.ItemsSource = s.Tasks;
+        MemSub.Text = string.IsNullOrWhiteSpace(s.Host.MemoryText) || s.Host.MemoryText == "—" ? "内存" : "内存 · " + s.Host.MemoryText;
+        DiskRing.Value = s.Host.Disk;
+        DiskText.Text = $"{s.Host.Disk:0}%";
+
+        CallList.ItemsSource = s.Calls.Take(4).ToList();
+        NoCalls.Visibility = s.Calls.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        ThreadList.ItemsSource = s.Threads.Take(3).ToList();
+        NoThreads.Visibility = s.Threads.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    static string Kb(long bps) => bps < 1000 ? $"{bps} B/s" : bps < 1_000_000 ? $"{bps / 1000.0:0.#} KB/s" : $"{bps / 1_000_000.0:0.##} MB/s";
+    static string Rate(long bps) => bps < 1000 ? $"{bps} B/s" : bps < 1_000_000 ? $"{bps / 1000.0:0.#} KB/s" : $"{bps / 1_000_000.0:0.##} MB/s";
 }

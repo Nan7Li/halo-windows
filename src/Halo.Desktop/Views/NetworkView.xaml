@@ -1,36 +1,47 @@
 <UserControl x:Class="Halo.Desktop.Views.NetworkView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <ScrollViewer Padding="22" VerticalScrollBarVisibility="Auto">
-    <StackPanel>
-      <TextBlock Text="出口与隧道" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,6"/>
-      <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,0,0,16"
-                 Text="代理绑定和 WireGuard 在 Halo 主机上执行，这台 Windows 客户端只负责查看与切换。"/>
-      <ItemsControl x:Name="Tunnels">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate>
-            <Border Style="{StaticResource Card}" Margin="0,0,0,10">
-              <DockPanel>
-                <Border DockPanel.Dock="Right" CornerRadius="12" Padding="10,4" VerticalAlignment="Center"
-                        Background="#2230D158">
-                  <TextBlock Text="{Binding Status}" FontSize="12" FontWeight="SemiBold"/>
-                </Border>
-                <StackPanel>
-                  <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
-                  <TextBlock Text="{Binding Endpoint}" Style="{StaticResource MutedText}" Margin="0,4,0,0"/>
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:Halo.Desktop.Controls">
+  <UserControl.Resources>
+    <!-- One menu for both the "…" button and right-click on the row. -->
+    <ContextMenu x:Key="TunnelMenu" x:Shared="False">
+      <MenuItem Header="修改…" c:Ui.Glyph="{x:Static c:Glyphs.Compose}" Click="EditTunnel"/>
+      <Separator/>
+      <MenuItem Header="删除隧道" c:Ui.Glyph="{x:Static c:Glyphs.Delete}" c:Ui.IsDestructive="True" Click="DeleteTunnel"/>
+    </ContextMenu>
+  </UserControl.Resources>
+
+  <Grid>
+    <ScrollViewer x:Name="Scroll" VerticalScrollBarVisibility="Auto" Padding="16,4,16,16">
+      <StackPanel MaxWidth="720" HorizontalAlignment="Stretch">
+        <Border x:Name="HintBar" Style="{StaticResource Banner.Warning}" Margin="0,0,0,12" Visibility="Collapsed">
+          <DockPanel>
+            <TextBlock Text="{x:Static c:Glyphs.Warning}" Style="{StaticResource Text.Glyph}" FontSize="13"
+                       Foreground="{DynamicResource OrangeBrush}" VerticalAlignment="Top" Margin="0,2,8,0"/>
+            <TextBlock x:Name="HintText" TextWrapping="Wrap"/>
+          </DockPanel>
+        </Border>
+
+        <c:ListSection x:Name="Tunnels" Header="WireGuard"
+                       Footer="隧道运行在 Halo 主机上。当前的 Halo API 只提供状态读取，启停、修改和删除需要在主机上操作。">
+          <c:ListSection.ItemTemplate>
+            <DataTemplate>
+              <c:ListRow Title="{Binding Name}" Subtitle="{Binding Endpoint}" Glyph="{x:Static c:Glyphs.Vpn}"
+                         GlyphBackground="{DynamicResource BlueBrush}" ContextMenu="{StaticResource TunnelMenu}">
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="{Binding Status, Mode=OneWay}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                  <c:IosSwitch IsChecked="{Binding Running, Mode=OneWay}" Click="ToggleTunnel"
+                               ToolTip="启停需要在 Halo 主机上操作"/>
+                  <Button Style="{StaticResource Btn.Icon}" Content="{x:Static c:Glyphs.More}" Margin="6,0,-6,0" ToolTip="更多"
+                          Click="MoreClick" ContextMenu="{StaticResource TunnelMenu}"/>
                 </StackPanel>
-              </DockPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-      <Border Style="{StaticResource Card}" Margin="0,8,0,0">
-        <StackPanel>
-          <TextBlock Text="说明" FontWeight="SemiBold"/>
-          <TextBlock Style="{StaticResource MutedText}" TextWrapping="Wrap" Margin="0,8,0,0"
-                     Text="Halo 的 SOCKS 出口、国家规则和 WG 隧道都跑在 Linux 主机。桌面端用来盯状态，而不是在本机再套一层 VPN。"/>
-        </StackPanel>
-      </Border>
-    </StackPanel>
-  </ScrollViewer>
+              </c:ListRow>
+            </DataTemplate>
+          </c:ListSection.ItemTemplate>
+        </c:ListSection>
+      </StackPanel>
+    </ScrollViewer>
+    <c:ContentUnavailable x:Name="Empty" Glyph="{x:Static c:Glyphs.Vpn}" Title="没有 WireGuard 隧道"
+                          Description="在 Halo 主机上添加隧道后，会出现在这里。" Visibility="Collapsed"/>
+  </Grid>
 </UserControl>

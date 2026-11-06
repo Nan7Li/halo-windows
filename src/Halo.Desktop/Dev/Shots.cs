@@ -44,6 +44,7 @@ internal static class Shots
         }
 
         await w.EnterPreviewAsync();
+        w.MsgPage.SelectFirst();
         foreach (var theme in new[] { "light", "dark" })
         {
             prefs.Appearance = theme;

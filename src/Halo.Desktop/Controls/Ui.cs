@@ -11,6 +11,12 @@ public static class Ui
     public static string? GetPlaceholder(DependencyObject o) => (string?)o.GetValue(PlaceholderProperty);
     public static void SetPlaceholder(DependencyObject o, string? v) => o.SetValue(PlaceholderProperty, v);
 
+    /// <summary>Second line of text for control tiles (e.g. "已开启").</summary>
+    public static readonly DependencyProperty DetailProperty = DependencyProperty.RegisterAttached(
+        "Detail", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(null));
+    public static string? GetDetail(DependencyObject o) => (string?)o.GetValue(DetailProperty);
+    public static void SetDetail(DependencyObject o, string? v) => o.SetValue(DetailProperty, v);
+
     /// <summary>Leading symbol for text fields and menu items.</summary>
     public static readonly DependencyProperty GlyphProperty = DependencyProperty.RegisterAttached(
         "Glyph", typeof(string), typeof(Ui), new FrameworkPropertyMetadata(null));

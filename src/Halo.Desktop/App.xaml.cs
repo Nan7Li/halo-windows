@@ -11,6 +11,12 @@ public partial class App : Application
         RenderOptions.ProcessRenderMode = System.Windows.Interop.RenderMode.Default;
         DispatcherUnhandledException += (_, args) =>
         {
+            try
+            {
+                System.IO.File.AppendAllText(System.IO.Path.Combine(System.IO.Path.GetTempPath(), "halo-desktop-errors.log"),
+                    $"{DateTime.Now:O}{Environment.NewLine}{args.Exception}{Environment.NewLine}{Environment.NewLine}");
+            }
+            catch { /* logging is best-effort */ }
             MessageBox.Show(args.Exception.Message, "Halo", MessageBoxButton.OK, MessageBoxImage.Warning);
             args.Handled = true;
         };

@@ -8,10 +8,8 @@ namespace Halo.Desktop.Controls;
 /// <summary>
 /// One row of a <see cref="ListSection"/>: label on the left, value/control on the right
 /// (the row's Content), 38pt minimum height. Draws a hairline separator above itself
-/// unless it is the first row, inset to where the title text starts.
+/// unless it is the first row, inset to where the title text starts (see the template).
 /// </summary>
-[TemplatePart(Name = "PART_Text", Type = typeof(FrameworkElement))]
-[TemplatePart(Name = "PART_Separator", Type = typeof(FrameworkElement))]
 public class ListRow : ContentControl
 {
     public static readonly DependencyProperty TitleProperty = DependencyProperty.Register(
@@ -54,29 +52,9 @@ public class ListRow : ContentControl
 
     public event RoutedEventHandler Click { add => AddHandler(ClickEvent, value); remove => RemoveHandler(ClickEvent, value); }
 
-    FrameworkElement? _text, _sep;
-
     public ListRow()
     {
         Loaded += (_, _) => UpdateSeparator();
-    }
-
-    public override void OnApplyTemplate()
-    {
-        base.OnApplyTemplate();
-        _text = GetTemplateChild("PART_Text") as FrameworkElement;
-        _sep = GetTemplateChild("PART_Separator") as FrameworkElement;
-    }
-
-    protected override Size ArrangeOverride(Size arrangeBounds)
-    {
-        var r = base.ArrangeOverride(arrangeBounds);
-        if (_text != null && _sep != null && _text.IsVisible)
-        {
-            var x = _text.TranslatePoint(new Point(0, 0), this).X;
-            if (Math.Abs(_sep.Margin.Left - x) > 0.1) _sep.Margin = new Thickness(x, 0, 0, 0);
-        }
-        return r;
     }
 
     /// <summary>First row in its list gets no separator.</summary>
