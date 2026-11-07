@@ -26,6 +26,19 @@ public partial class App : Application
         ThemeManager.Apply(AppState.Current.Prefs);
         base.OnStartup(e);
 
+        var pi = Array.IndexOf(e.Args, "--perf");
+        if (pi >= 0 && pi + 1 < e.Args.Length)
+        {
+            var dir = e.Args[pi + 1];
+            Activated += OncePerf;
+            async void OncePerf(object? s, EventArgs _)
+            {
+                Activated -= OncePerf;
+                if (MainWindow is MainWindow w) await Dev.Perf.Run(w, dir, e.Args.Contains("--max"));
+            }
+            return;
+        }
+
         var i = Array.IndexOf(e.Args, "--shots");
         if (i >= 0 && i + 1 < e.Args.Length)
         {

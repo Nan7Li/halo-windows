@@ -54,6 +54,7 @@ dotnet publish src\Halo.Desktop\Halo.Desktop.csproj -c Release -r win-x64 --self
 ## 截图工具（开发用）
 
 - `Halo.exe --shots <目录>`：本地预览模式下把每个页面按浅色 / 深色 × 100% / 150% 渲染成 PNG，另加一套 960 宽的最小窗口截图。加 `--bold` 打开粗体文本，`--anim` 改为逐帧记录开关和分段控件的动画数值。这些都不会写入偏好设置。Mica 不在 WPF 渲染树里，所以这里用纯色背景代替。
+- `Halo.exe --perf <目录> [--max]`：本地预览模式下自动切换页面、拨动开关和分段控件，记录每帧间隔，写到 `perf.txt`（加 `--max` 先最大化窗口）。帧间隔超过 25 ms 记为掉帧。
 - `tools\shoot-window.ps1 -Exe <Halo.exe> -Out <目录> [-Appearance light|dark]`：截真实窗口（含 Mica）。只有 Halo 在最前面时才会保存截图。
 
 ## 许可

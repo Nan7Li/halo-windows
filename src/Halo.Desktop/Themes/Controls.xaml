@@ -937,7 +937,12 @@
       <Setter.Value>
         <ControlTemplate TargetType="c:GlassPanel">
           <Grid>
+            <!-- The blurred shadow is rasterised once and reused: without the cache it is
+                 re-blurred every frame whenever an animation dirties the area next to it. -->
             <c:SquircleBorder x:Name="fill" CornerRadius="{TemplateBinding CornerRadius}" Background="{DynamicResource GlassFillBrush}">
+              <c:SquircleBorder.CacheMode>
+                <BitmapCache RenderAtScale="1" SnapsToDevicePixels="True"/>
+              </c:SquircleBorder.CacheMode>
               <c:SquircleBorder.Effect>
                 <DropShadowEffect BlurRadius="24" ShadowDepth="4" Direction="270" Opacity="0.12" Color="Black"/>
               </c:SquircleBorder.Effect>

@@ -74,10 +74,17 @@ public static class Motion
         from.IsHitTestVisible = false;
         Panel.SetZIndex(to, 1);
         Panel.SetZIndex(from, 0);
-        Fade(to, 1);
-        Fade(from, 0, done: () =>
+
+        // Start the fades once the incoming page has been measured and arranged (Loaded runs
+        // after layout). Otherwise a slow layout pass lands inside the 180 ms animation and
+        // the first half of the fade is skipped in one visible jump.
+        to.Dispatcher.BeginInvoke(() =>
         {
-            if (!from.IsHitTestVisible) from.Visibility = Visibility.Collapsed;
-        });
+            Fade(to, 1);
+            Fade(from, 0, done: () =>
+            {
+                if (!from.IsHitTestVisible) from.Visibility = Visibility.Collapsed;
+            });
+        }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 }

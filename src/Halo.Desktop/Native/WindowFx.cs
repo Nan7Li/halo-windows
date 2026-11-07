@@ -49,41 +49,42 @@ internal static class WindowFx
     /// <summary>Set once the backdrop was actually accepted by DWM for this process.</summary>
     public static bool MicaActive { get; private set; }
 
-    public static void Attach(Window window, Func<bool> isDark)
+    /// <summary>
+    /// Applies corners, dark frame and Mica. Call from <c>OnSourceInitialized</c>, once the
+    /// HWND exists and before the window is first shown.
+    /// </summary>
+    public static void Init(Window window, bool dark)
     {
-        window.SourceInitialized += (_, _) =>
+        var hwnd = new WindowInteropHelper(window).Handle;
+        if (hwnd == IntPtr.Zero) return;
+
+        int round = DWMWCP_ROUND;
+        DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref round, sizeof(int));
+        SetDark(hwnd, dark);
+
+        if (!MicaSupported) { MicaActive = false; return; }
+        if (HwndSource.FromHwnd(hwnd) is { CompositionTarget: { } target })
+            target.BackgroundColor = Colors.Transparent;
+        var m = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
+        DwmExtendFrameIntoClientArea(hwnd, ref m);
+
+        // With the frame extended over the client area DWM would also paint its own
+        // min/max/close under ours; without WS_SYSMENU it does not. Alt+F4 still closes.
+        var style = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
+        SetWindowLongPtr(hwnd, GWL_STYLE, new IntPtr(style & ~WS_SYSMENU));
+
+        int hr;
+        if (Build >= 22621)
         {
-            var hwnd = new WindowInteropHelper(window).Handle;
-            if (hwnd == IntPtr.Zero) return;
-
-            int round = DWMWCP_ROUND;
-            DwmSetWindowAttribute(hwnd, DWMWA_WINDOW_CORNER_PREFERENCE, ref round, sizeof(int));
-            SetDark(hwnd, isDark());
-
-            if (!MicaSupported) { MicaActive = false; return; }
-            if (HwndSource.FromHwnd(hwnd) is { CompositionTarget: { } target })
-                target.BackgroundColor = Colors.Transparent;
-            var m = new Margins { Left = -1, Right = -1, Top = -1, Bottom = -1 };
-            DwmExtendFrameIntoClientArea(hwnd, ref m);
-
-            // With the frame extended over the client area DWM would also paint its own
-            // min/max/close under ours; without WS_SYSMENU it does not. Alt+F4 still closes.
-            var style = GetWindowLongPtr(hwnd, GWL_STYLE).ToInt64();
-            SetWindowLongPtr(hwnd, GWL_STYLE, new IntPtr(style & ~WS_SYSMENU));
-
-            int hr;
-            if (Build >= 22621)
-            {
-                int mica = DWMSBT_MAINWINDOW;
-                hr = DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref mica, sizeof(int));
-            }
-            else
-            {
-                int on = 1;
-                hr = DwmSetWindowAttribute(hwnd, DWMWA_MICA_EFFECT, ref on, sizeof(int));
-            }
-            MicaActive = hr == 0;
-        };
+            int mica = DWMSBT_MAINWINDOW;
+            hr = DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref mica, sizeof(int));
+        }
+        else
+        {
+            int on = 1;
+            hr = DwmSetWindowAttribute(hwnd, DWMWA_MICA_EFFECT, ref on, sizeof(int));
+        }
+        MicaActive = hr == 0;
     }
 
     public static void SetDark(Window window, bool dark)

@@ -12,11 +12,11 @@ public class SquircleBorder : Decorator
 {
     public static readonly DependencyProperty CornerRadiusProperty = DependencyProperty.Register(
         nameof(CornerRadius), typeof(double), typeof(SquircleBorder),
-        new FrameworkPropertyMetadata(14.0, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.AffectsArrange));
+        new FrameworkPropertyMetadata(14.0, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.AffectsArrange, ShapeChanged));
 
     public static readonly DependencyProperty SmoothingProperty = DependencyProperty.Register(
         nameof(Smoothing), typeof(double), typeof(SquircleBorder),
-        new FrameworkPropertyMetadata(0.6, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.AffectsArrange));
+        new FrameworkPropertyMetadata(0.6, FrameworkPropertyMetadataOptions.AffectsRender | FrameworkPropertyMetadataOptions.AffectsArrange, ShapeChanged));
 
     public static readonly DependencyProperty BackgroundProperty = Panel.BackgroundProperty.AddOwner(
         typeof(SquircleBorder), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsRender));
@@ -26,7 +26,7 @@ public class SquircleBorder : Decorator
 
     public static readonly DependencyProperty StrokeThicknessProperty = DependencyProperty.Register(
         nameof(StrokeThickness), typeof(double), typeof(SquircleBorder),
-        new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender));
+        new FrameworkPropertyMetadata(0.0, FrameworkPropertyMetadataOptions.AffectsRender, ShapeChanged));
 
     public static readonly DependencyProperty PaddingProperty = Border.PaddingProperty.AddOwner(
         typeof(SquircleBorder), new FrameworkPropertyMetadata(new Thickness(), FrameworkPropertyMetadataOptions.AffectsMeasure));
@@ -43,9 +43,16 @@ public class SquircleBorder : Decorator
     public Thickness Padding { get => (Thickness)GetValue(PaddingProperty); set => SetValue(PaddingProperty, value); }
     public bool ClipContent { get => (bool)GetValue(ClipContentProperty); set => SetValue(ClipContentProperty, value); }
 
-    Geometry? _shape;
+    // Geometry is rebuilt only when the size or the corner parameters change, so a layout
+    // pass that does not resize the border does not dirty its clip or its rendering.
+    Geometry? _shape, _stroke;
     Size _shapeSize;
 
+    static void ShapeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var b = (SquircleBorder)d;
+        b._shape = b._stroke = null;
+    }
     protected override Size MeasureOverride(Size constraint)
     {
         var pad = Padding;
@@ -62,8 +69,8 @@ public class SquircleBorder : Decorator
         Child?.Arrange(new Rect(pad.Left, pad.Top,
             Math.Max(0, arrangeSize.Width - pad.Left - pad.Right),
             Math.Max(0, arrangeSize.Height - pad.Top - pad.Bottom)));
-        _shape = null;
-        Clip = ClipContent ? Shape(arrangeSize) : null;
+        var clip = ClipContent ? Shape(arrangeSize) : null;
+        if (!ReferenceEquals(Clip, clip)) Clip = clip;
         return arrangeSize;
     }
 
@@ -72,6 +79,7 @@ public class SquircleBorder : Decorator
         if (_shape == null || _shapeSize != size)
         {
             _shape = Squircle.Create(new Rect(size), CornerRadius, Smoothing);
+            _stroke = null;
             _shapeSize = size;
         }
         return _shape;
@@ -85,9 +93,10 @@ public class SquircleBorder : Decorator
         var t = StrokeThickness;
         if (BorderBrush != null && t > 0)
         {
-            var inner = Squircle.Create(new Rect(t / 2, t / 2, Math.Max(0, size.Width - t), Math.Max(0, size.Height - t)),
+            Shape(size);
+            _stroke ??= Squircle.Create(new Rect(t / 2, t / 2, Math.Max(0, size.Width - t), Math.Max(0, size.Height - t)),
                 Math.Max(0, CornerRadius - t / 2), Smoothing);
-            dc.DrawGeometry(null, new Pen(BorderBrush, t), inner);
+            dc.DrawGeometry(null, new Pen(BorderBrush, t), _stroke);
         }
     }
 }

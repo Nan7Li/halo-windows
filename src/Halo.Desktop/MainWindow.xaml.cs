@@ -24,12 +24,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        WindowFx.Attach(this, () => ThemeManager.IsDark);
-        SourceInitialized += (_, _) =>
-        {
-            ApplyBackdrop();
-            HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(WndProc);
-        };
         ThemeManager.Changed += OnThemeChanged;
         Loaded += OnLoaded;
         StateChanged += (_, _) => OnStateChanged();
@@ -66,6 +60,14 @@ public partial class MainWindow : Window
     }
 
     // ------------------------------------------------------------ window chrome
+
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+        WindowFx.Init(this, ThemeManager.IsDark);
+        ApplyBackdrop();
+        HwndSource.FromHwnd(new WindowInteropHelper(this).Handle)?.AddHook(WndProc);
+    }
 
     void ApplyBackdrop()
     {
@@ -169,8 +171,10 @@ public partial class MainWindow : Window
         UserInitial.Text = string.IsNullOrEmpty(_s.Username) ? "H" : _s.Username[..1].ToUpperInvariant();
         PageSub.Text = _s.StatusLine;
         Motion.CrossFade(LoginLayer, ShellLayer);
+        _snapshot.Clear();
         ShowPage(HaloPage.Home);
         await RefreshAll();
+        WarmPages();
         _poll.Start();
     }
 
@@ -201,17 +205,22 @@ public partial class MainWindow : Window
 
     void NavChecked(object sender, RoutedEventArgs e)
     {
-        if (!IsLoaded) return;
+        // Data is kept current by the 4 s poll, so switching pages does not fetch anything.
+        if (!IsLoaded || _showing) return;
         var page = _nav.FirstOrDefault(kv => ReferenceEquals(kv.Value, sender)).Key;
         ShowPage(page);
-        _ = RefreshAll();
     }
+
+    bool _showing;
 
     internal void ShowPage(HaloPage page, bool animate = true)
     {
         _s.Page = page;
         PageTitle.Text = _s.Title;
-        if (_nav.TryGetValue(page, out var rb) && rb.IsChecked != true) rb.IsChecked = true;
+        _showing = true;
+        try { if (_nav.TryGetValue(page, out var rb) && rb.IsChecked != true) rb.IsChecked = true; }
+        finally { _showing = false; }
+        if (_stale.Remove(page)) BindPage(page);
         var target = _pages[page];
         if (animate) Motion.CrossFade(_current, target);
         else
@@ -272,43 +281,116 @@ public partial class MainWindow : Window
 
     // ------------------------------------------------------------ data
 
+    // Which data each page shows; a page is re-bound only when one of these changed.
+    static readonly Dictionary<HaloPage, string[]> PageData = new()
+    {
+        [HaloPage.Home] = ["devices", "host", "tasks", "threads", "calls"],
+        [HaloPage.Messages] = ["threads"],
+        [HaloPage.Phone] = ["devices", "calls"],
+        [HaloPage.Devices] = ["devices"],
+        [HaloPage.Network] = ["tunnels"],
+        [HaloPage.Logs] = ["logs"],
+        [HaloPage.Settings] = ["identity"]
+    };
+
+    readonly Dictionary<string, string> _snapshot = [];
+    readonly HashSet<HaloPage> _stale = [];
+
+    /// <summary>True when <paramref name="value"/> differs from the last value seen for this key.</summary>
+    bool Changed(string key, object? value)
+    {
+        string sig;
+        try { sig = System.Text.Json.JsonSerializer.Serialize(value); }
+        catch { sig = Guid.NewGuid().ToString(); }
+        if (_snapshot.TryGetValue(key, out var old) && old == sig) return false;
+        _snapshot[key] = sig;
+        return true;
+    }
+
+    /// <summary>
+    /// Polls the host. Collections are only replaced when their content changed, and only the
+    /// visible page is re-bound; other pages are marked stale and re-bound when shown. Re-binding
+    /// regenerates every row, so doing it for all seven pages every 4 s made page switches
+    /// re-layout from scratch.
+    /// </summary>
     internal async Task RefreshAll()
     {
         try
         {
+            var changed = new HashSet<string>();
+
             var devices = await _s.Client.DevicesAsync();
-            _s.Replace(_s.Devices, devices);
-            if (_s.SelectedDevice == null || devices.All(d => d.Id != _s.SelectedDevice.Id))
-                _s.SelectedDevice = devices.FirstOrDefault();
+            if (Changed("devices", devices)) { changed.Add("devices"); _s.Replace(_s.Devices, devices); }
+            if (_s.SelectedDevice == null || _s.Devices.All(d => d.Id != _s.SelectedDevice.Id))
+                _s.SelectedDevice = _s.Devices.FirstOrDefault();
 
             var host = await _s.Client.HostAsync();
-            _s.Host.CpuModel = host.CpuModel;
-            _s.Host.Board = host.Board;
-            _s.Host.Cpu = host.Cpu;
-            _s.Host.Memory = host.Memory;
-            _s.Host.Disk = host.Disk;
-            _s.Host.Rx = host.Rx;
-            _s.Host.Tx = host.Tx;
-            _s.Host.MemoryText = host.MemoryText;
+            if (Changed("host", host))
+            {
+                changed.Add("host");
+                _s.Host.CpuModel = host.CpuModel;
+                _s.Host.Board = host.Board;
+                _s.Host.Cpu = host.Cpu;
+                _s.Host.Memory = host.Memory;
+                _s.Host.Disk = host.Disk;
+                _s.Host.Rx = host.Rx;
+                _s.Host.Tx = host.Tx;
+                _s.Host.MemoryText = host.MemoryText;
+            }
 
-            _s.Replace(_s.Tasks, await _s.Client.TasksAsync());
-            _s.Replace(_s.Threads, await _s.Client.ContactsAsync());
-            _s.Replace(_s.Calls, await _s.Client.CallsAsync(_s.SelectedDevice?.Id));
-            _s.Replace(_s.Logs, await _s.Client.LogsAsync());
-            _s.Replace(_s.Tunnels, await _s.Client.TunnelsAsync());
+            async Task Load<T>(string key, System.Collections.ObjectModel.ObservableCollection<T> target, Task<List<T>> fetch)
+            {
+                var items = await fetch;
+                if (Changed(key, items)) { changed.Add(key); _s.Replace(target, items); }
+            }
+            await Load("tasks", _s.Tasks, _s.Client.TasksAsync());
+            await Load("threads", _s.Threads, _s.Client.ContactsAsync());
+            await Load("calls", _s.Calls, _s.Client.CallsAsync(_s.SelectedDevice?.Id));
+            await Load("logs", _s.Logs, _s.Client.LogsAsync());
+            await Load("tunnels", _s.Tunnels, _s.Client.TunnelsAsync());
+            if (Changed("identity", new { _s.Server, _s.Version, _s.Username, _s.Role, _s.Client.Preview })) changed.Add("identity");
 
-            HomePage.Bind(_s);
-            MsgPage.Bind(_s);
-            PhonePage.Bind(_s);
-            DevPage.Bind(_s);
-            NetPage.Bind(_s);
-            LogsPage.Bind(_s);
-            SetPage.Bind(_s);
+            foreach (var (page, keys) in PageData)
+                if (keys.Any(changed.Contains)) _stale.Add(page);
+            if (_stale.Remove(_s.Page)) BindPage(_s.Page);
             PageSub.Text = _s.StatusLine;
         }
         catch (Exception ex)
         {
             PageSub.Text = "同步失败 · " + ex.Message;
+        }
+    }
+
+    void BindPage(HaloPage page)
+    {
+        switch (page)
+        {
+            case HaloPage.Home: HomePage.Bind(_s); break;
+            case HaloPage.Messages: MsgPage.Bind(_s); break;
+            case HaloPage.Phone: PhonePage.Bind(_s); break;
+            case HaloPage.Devices: DevPage.Bind(_s); break;
+            case HaloPage.Network: NetPage.Bind(_s); break;
+            case HaloPage.Logs: LogsPage.Bind(_s); break;
+            case HaloPage.Settings: SetPage.Bind(_s); break;
+        }
+    }
+
+    /// <summary>
+    /// After sign-in, binds and lays out the hidden pages one at a time while the app is idle,
+    /// so the first visit to each page does not pay for building its whole visual tree.
+    /// </summary>
+    void WarmPages()
+    {
+        foreach (var (page, el) in _pages)
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                if (!_s.LoggedIn || ReferenceEquals(el, _current) || el.Visibility != Visibility.Collapsed) return;
+                if (_stale.Remove(page)) BindPage(page);
+                el.Visibility = Visibility.Hidden;
+                el.UpdateLayout();
+                if (!ReferenceEquals(el, _current) && el.Visibility == Visibility.Hidden) el.Visibility = Visibility.Collapsed;
+            }, DispatcherPriority.ApplicationIdle);
         }
     }
 
