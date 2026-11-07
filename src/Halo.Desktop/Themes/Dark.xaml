@@ -1,0 +1,51 @@
+<!-- Dark palette: Apple system semantic colors (RGB values from the Halo web design spec).
+     Keys mirror Light.xaml exactly. -->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Color x:Key="LabelColor">#FFFFFFFF</Color>
+  <Color x:Key="Label2Color">#FF98989F</Color>
+  <Color x:Key="Label3Color">#FF6C6C71</Color>
+  <Color x:Key="GroupedColor">#FF000000</Color>
+  <Color x:Key="Grouped2Color">#FF1C1C1E</Color>
+  <Color x:Key="Grouped3Color">#FF2C2C2E</Color>
+  <Color x:Key="SeparatorColor">#FF38383A</Color>
+  <Color x:Key="Fill3Color">#3D767680</Color>
+  <Color x:Key="BlueColor">#FF0A84FF</Color>
+  <Color x:Key="GreenColor">#FF30D158</Color>
+  <Color x:Key="OrangeColor">#FFFF9F0A</Color>
+  <Color x:Key="RedColor">#FFFF453A</Color>
+
+  <SolidColorBrush x:Key="LabelBrush" Color="#FFFFFFFF"/>
+  <SolidColorBrush x:Key="Label2Brush" Color="#FF98989F"/>
+  <SolidColorBrush x:Key="Label3Brush" Color="#FF6C6C71"/>
+  <SolidColorBrush x:Key="GroupedBrush" Color="#FF000000"/>
+  <SolidColorBrush x:Key="Grouped2Brush" Color="#FF1C1C1E"/>
+  <SolidColorBrush x:Key="Grouped3Brush" Color="#FF2C2C2E"/>
+  <SolidColorBrush x:Key="SeparatorBrush" Color="#FF38383A"/>
+  <SolidColorBrush x:Key="Fill3Brush" Color="#3D767680"/>
+  <SolidColorBrush x:Key="BlueBrush" Color="#FF0A84FF"/>
+  <SolidColorBrush x:Key="GreenBrush" Color="#FF30D158"/>
+  <SolidColorBrush x:Key="OrangeBrush" Color="#FFFF9F0A"/>
+  <SolidColorBrush x:Key="RedBrush" Color="#FFFF453A"/>
+
+  <SolidColorBrush x:Key="GreenTintBrush" Color="#2630D158"/>
+  <SolidColorBrush x:Key="OrangeTintBrush" Color="#26FF9F0A"/>
+  <SolidColorBrush x:Key="RedTintBrush" Color="#26FF453A"/>
+
+  <SolidColorBrush x:Key="HoverFillBrush" Color="#0FFFFFFF"/>
+  <SolidColorBrush x:Key="SelectionFillBrush" Color="#1FFFFFFF"/>
+  <!-- grouped3 (44,44,46) would sit darker than the fill3 track in dark mode, so the
+       selected segment uses systemGray3 to stay visibly raised. -->
+  <SolidColorBrush x:Key="SegmentThumbBrush" Color="#FF636366"/>
+  <SolidColorBrush x:Key="SwitchThumbBrush" Color="#FFFFFFFF"/>
+  <SolidColorBrush x:Key="ScrollThumbBrush" Color="#66FFFFFF"/>
+
+  <LinearGradientBrush x:Key="AvatarBrush" StartPoint="0,0" EndPoint="0,1">
+    <GradientStop Color="#FF6C6C70" Offset="0"/>
+    <GradientStop Color="#FF48484A" Offset="1"/>
+  </LinearGradientBrush>
+  <LinearGradientBrush x:Key="DeviceThumbBrush" StartPoint="0,0" EndPoint="0,1">
+    <GradientStop Color="#FF3A3A3C" Offset="0"/>
+    <GradientStop Color="#FF2C2C2E" Offset="1"/>
+  </LinearGradientBrush>
+</ResourceDictionary>

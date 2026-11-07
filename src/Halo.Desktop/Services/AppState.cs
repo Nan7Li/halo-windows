@@ -30,12 +30,12 @@ public sealed class AppState : Observable
 
     public string Title => Page switch
     {
-        HaloPage.Home => "今天",
+        HaloPage.Home => "主页",
         HaloPage.Messages => "消息",
         HaloPage.Phone => "电话",
-        HaloPage.Devices => "模组",
-        HaloPage.Network => "链路",
-        HaloPage.Logs => "现场",
+        HaloPage.Devices => "设备",
+        HaloPage.Network => "网络",
+        HaloPage.Logs => "日志",
         HaloPage.Settings => "设置",
         _ => "Halo"
     };

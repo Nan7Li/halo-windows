@@ -5,6 +5,8 @@
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
+        <!-- [0] palette, replaced at runtime by ThemeManager. -->
+        <ResourceDictionary Source="Themes/Light.xaml"/>
         <ResourceDictionary Source="Themes/HaloTheme.xaml"/>
       </ResourceDictionary.MergedDictionaries>
     </ResourceDictionary>
