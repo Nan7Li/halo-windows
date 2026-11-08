@@ -4,13 +4,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
 )
 
 // messagesPage is Messages for the Mac: conversations beside the one open.
 func (a *app) messagesPage(c *ui.Context, p palette) {
-	ui.Row(c).Grow(1).MinHeight(0).Margin(sidebarInset, sidebarInset, sidebarInset, sidebarInset).Radius(14).Background(p.Card).Clip().AlignItems(ui.Stretch).Children(func() {
+	ui.Row(c).Grow(1).MinHeight(0).Margin(sidebarInset, sidebarInset, sidebarInset, sidebarInset).Radius(radiusSidebar).Background(p.Card).Clip().AlignItems(ui.Stretch).Children(func() {
 		a.conversationList(c, p)
 		ui.Box(c).Width(1).Background(p.Separator)
 		ui.Column(c).Grow(1).MinWidth(0).Children(func() {
@@ -50,19 +49,21 @@ func (a *app) conversationList(c *ui.Context, p palette) {
 			if a.refreshing["contacts"] && a.loaded["contacts"] {
 				ui.Spinner(c).Size(14, 14)
 			}
-			if glassIconButton(c, icRefresh, "刷新").Clicked() {
-				a.refreshPage()
-			}
-			if glassIconButton(c, icCompose, "新信息").Clicked() {
-				a.composeOpen, a.selected, a.draft = true, "", ""
-				if lines := a.smsLines(); len(lines) > 0 && a.composeLine == "" {
-					a.composeLine = lines[0].ID
+			toolbarGroup(c, func() {
+				if toolButton(c, p, icRefresh, "刷新").Clicked() {
+					a.refreshPage()
 				}
-			}
+				if toolButton(c, p, icCompose, "新信息").Clicked() {
+					a.composeOpen, a.selected, a.draft = true, "", ""
+					if lines := a.smsLines(); len(lines) > 0 && a.composeLine == "" {
+						a.composeLine = lines[0].ID
+					}
+				}
+			})
 		})
 		_ = bar
 		ui.Row(c).Padding(2, 12, 8).Gap(8).AlignItems(ui.Center).Children(func() {
-			ui.SearchField(c, &a.search).Placeholder("搜索").Grow(1).Label("搜索短信").Radius(9).Background(p.Fill).Border(0, ui.Transparent)
+			ui.SearchField(c, &a.search).Placeholder("搜索").Grow(1).Label("搜索短信").Height(32).Radius(16).Background(p.Fill).Border(0, ui.Transparent)
 		})
 		if !a.loadState(c, p, "contacts") {
 			return
@@ -71,7 +72,7 @@ func (a *app) conversationList(c *ui.Context, p palette) {
 			k := list[i]
 			key := k.Key()
 			sel := key == a.selected && !a.composeOpen
-			r := ui.Row(c.Key(key)).Padding(9, 10, 9, 6).Margin(0, 8).Gap(8).Radius(10).AlignItems(ui.Center).Cursor(ui.CursorPointer)
+			r := ui.Row(c.Key(key)).Padding(9, 10, 9, 6).Margin(0, 8).Gap(8).Radius(radiusItem).AlignItems(ui.Center).Cursor(ui.CursorPointer)
 			if sel {
 				r.Background(t.Accent)
 			} else if r.Hovered() {
@@ -123,27 +124,6 @@ func (a *app) conversation(c *ui.Context, p palette) {
 	}
 	t := c.Theme()
 	ui.Column(c).Grow(1).MinHeight(0).Children(func() {
-		ui.Box(c).Shrink(0).BorderWidth(0, 0, 1, 0).BorderColor(p.Separator).DragWindow().Children(func() {
-			ui.Column(c).Padding(10, 0, 10).Gap(4).AlignItems(ui.Center).Children(func() {
-				avatar(c, p, k.Title(), 40)
-				ui.Text(c, k.Title()).FontSize(11).Padding(1, 8).Radius(9).Background(p.Fill).SingleLine()
-				sub := k.Peer
-				if k.Title() == k.Peer {
-					sub = ""
-				}
-				if s := joinDot(sub, k.DeviceName); s != "" {
-					ui.Text(c, s).FontSize(11).TextColor(p.Secondary).SingleLine()
-				}
-			})
-			if isDialable(k.Peer) {
-				ui.Box(c).Absolute().Top(0).Bottom(0).Right(c.TitleBar().Right + 14).Center().Children(func() {
-					if glassIconButton(c, icPhone, "呼叫 "+k.Peer).Clicked() {
-						a.dialLine = k.DeviceID
-						a.dial(k.Peer)
-					}
-				})
-			}
-		})
 		ui.Box(c).Grow(1).MinHeight(0).Children(func() {
 			msgs := a.thread
 			if a.threadKey != a.selected {
@@ -174,23 +154,51 @@ func (a *app) conversation(c *ui.Context, p palette) {
 						ui.Text(c, deliveryText(m)).FontSize(11).TextColor(p.Secondary).AlignSelf(ui.End)
 					}
 				})
-			}).Fill().Padding(8, 0, 76)
+			}).Fill().Padding(convHeader+4, 0, 76)
 			list.Children(func() {
 				if len(msgs) == 0 && a.refreshing["thread"] {
 					ui.Column(c).Grow(1).Center().Children(func() { ui.Spinner(c) })
 				}
 			})
+			// The header and the field float over the conversation, which
+			// fades and blurs under them as it scrolls.
+			scrollEdge(c, convHeader+14, p.Card.Alpha(0.8), false)
+			ui.Box(c).Absolute().Top(0).Left(0).Right(0).Height(convHeader).DragWindow().Children(func() {
+				ui.Column(c).Padding(10, 0, 10).Gap(4).AlignItems(ui.Center).Children(func() {
+					avatar(c, p, k.Title(), 40)
+					ui.Text(c, k.Title()).FontSize(12).Bold().Padding(3, 10).Radius(11).Material(pane()).Shadow(0, 1, 6, 0, ui.RGBA(0, 0, 0, 0.08)).SingleLine()
+					sub := k.Peer
+					if k.Title() == k.Peer {
+						sub = ""
+					}
+					if s := joinDot(sub, k.DeviceName); s != "" {
+						ui.Text(c, s).FontSize(11).TextColor(p.Secondary).SingleLine()
+					}
+				})
+				if isDialable(k.Peer) {
+					ui.Box(c).Absolute().Top(0).Bottom(0).Right(c.TitleBar().Right + 14).Center().Children(func() {
+						if glassIconButton(c, icPhone, "呼叫 "+k.Peer).Clicked() {
+							a.dialLine = k.DeviceID
+							a.dial(k.Peer)
+						}
+					})
+				}
+			})
+			scrollEdge(c, 70, p.Card.Alpha(0.8), true)
 			a.composer(c, p, func() { a.sendMessage() }, "短信")
 		})
 	})
 }
+
+// convHeader is the height of a conversation's floating header.
+const convHeader = 104
 
 // composer is the message field, a capsule of glass floating over the
 // bottom of the conversation.
 func (a *app) composer(c *ui.Context, p palette, send func(), placeholder string) {
 	t := c.Theme()
 	ui.Row(c).Absolute().Left(14).Right(14).Bottom(14).Padding(6, 6, 6, 16).Gap(8).AlignItems(ui.End).Radius(22).
-		Material(glass.Glass{}).Children(func() {
+		Material(pane()).Shadow(0, 4, 16, 0, ui.RGBA(0, 0, 0, 0.10)).Children(func() {
 		ui.TextAreaBase(c.Key("draft"), &a.draft).Lines(1, 6).Placeholder(placeholder).PlaceholderColor(p.Tertiary).
 			Label("短信内容").FontSize(14).Grow(1).MinWidth(0).Padding(5, 0).
 			OnTextKey(func(k ui.TextKey) bool {
@@ -207,7 +215,7 @@ func (a *app) composer(c *ui.Context, p palette, send func(), placeholder string
 		if !ok {
 			fill = p.Tertiary
 		}
-		b := ui.Box(c).Size(30, 30).Radius(15).Center().Background(fill).Cursor(ui.CursorPointer).Role(ui.RoleButton).Label("发送").Disabled(!ok)
+		b := ui.Box(c).Size(30, 30).Radius(15).Center().Material(tinted(fill)).Cursor(ui.CursorPointer).Role(ui.RoleButton).Label("发送").Disabled(!ok)
 		b.Children(func() {
 			ui.Icon(c, icUp).FontSize(17).TextColor(ui.RGB(255, 255, 255))
 		})

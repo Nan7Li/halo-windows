@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 
-	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -17,8 +16,8 @@ var keypad = []struct{ digit, letters string }{
 // phonePage is the keypad beside the recent calls, as the web UI's phone
 // page on the desktop.
 func (a *app) phonePage(c *ui.Context, p palette) {
-	ui.Row(c).Grow(1).MinHeight(0).Gap(32).Padding(4, 28, 28, 28).AlignItems(ui.Start).Children(func() {
-		ui.Column(c).Width(360).Shrink(0).Radius(14).Background(p.Card).Padding(20, 20, 24).Gap(16).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Grow(1).MinHeight(0).Gap(32).Padding(titleBarHeight+4, 28, 28, 28).AlignItems(ui.Start).Children(func() {
+		ui.Column(c).Width(360).Shrink(0).Radius(radiusCard).Background(p.Card).Padding(20, 20, 24).Gap(16).AlignItems(ui.Center).Children(func() {
 			a.keypad(c, p)
 		})
 		ui.Column(c).Grow(1).MinWidth(0).MaxHeightPercent(100).Gap(14).Children(func() {
@@ -39,7 +38,7 @@ func (a *app) lineChip(c *ui.Context, p palette, lines []Device, chosen string, 
 		}
 	}
 	chip := ui.Row(c).Height(32).Padding(0, 12).Gap(6).Radius(16).AlignItems(ui.Center).Cursor(ui.CursorPointer).
-		Material(glass.Glass{Interactive: true}).Role(ui.RoleMenuButton).Label("线路：" + d.Title())
+		Material(control()).Role(ui.RoleMenuButton).Label("线路：" + d.Title())
 	chip.Children(func() {
 		_, tone := d.Status()
 		dot(c, p.tone(tone))
@@ -65,7 +64,7 @@ func (a *app) lineChip(c *ui.Context, p palette, lines []Device, chosen string, 
 func (a *app) keypad(c *ui.Context, p palette) {
 	lines := a.readyLines()
 	if len(lines) == 0 {
-		ui.Row(c).Padding(8, 10).Gap(8).Radius(10).Background(p.Orange.Alpha(0.14)).AlignItems(ui.Center).Children(func() {
+		ui.Row(c).Padding(8, 12).Gap(8).Radius(radiusRow).Background(p.Orange.Alpha(0.14)).AlignItems(ui.Center).Children(func() {
 			ui.Icon(c, icWarn).FontSize(15).TextColor(p.Orange)
 			ui.Text(c, "没有可通话的线路。在“设备”里开启 WiFi 通话，等 IMS 注册后即可拨打。").FontSize(12).Grow(1)
 		})
@@ -88,6 +87,8 @@ func (a *app) keypad(c *ui.Context, p palette) {
 			if b.Pressed() {
 				b.Background(p.FillPressed)
 			}
+			// Keys give a little under the finger and spring back.
+			b.AnimatePose(ui.Pose{Scale: map[bool]float32{true: 0.93, false: 1}[b.Pressed()]}, ui.Bouncy)
 			b.Children(func() {
 				ui.Text(c, k.digit).FontSize(34).LineHeight(1.05)
 				if k.letters != "" {
@@ -151,7 +152,7 @@ func (a *app) recents(c *ui.Context, p palette) {
 	if missed > 0 {
 		missedLabel = fmt.Sprintf("未接 · %d", missed)
 	}
-	ui.Segmented(c, &a.phoneTab, "全部", missedLabel).Label("筛选").Width(200)
+	segmented(c, p, &a.phoneTab, 220, "全部", missedLabel).Label("筛选")
 	if !a.loadState(c, p, "calls") {
 		return
 	}
@@ -170,7 +171,7 @@ func (a *app) recents(c *ui.Context, p palette) {
 		emptyState(c, p, icPhone, title, "")
 		return
 	}
-	ui.Column(c).Radius(12).Background(p.Card).Clip().Children(func() {
+	ui.Column(c).Radius(radiusSection).Background(p.Card).Clip().Children(func() {
 		for i, r := range list {
 			row(c.Key(r.ID), p, i == len(list)-1, func() {
 				ic := icOutgoing

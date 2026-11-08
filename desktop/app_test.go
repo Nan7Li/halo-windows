@@ -50,6 +50,8 @@ func snapshot(t *testing.T, tt *ui.Tester, name string) {
 		t.Fatal(err)
 	}
 	defer f.Close()
+	// Let springs and transitions settle first.
+	tt.Advance(time.Second)
 	if err := png.Encode(f, tt.Image()); err != nil {
 		t.Fatal(err)
 	}

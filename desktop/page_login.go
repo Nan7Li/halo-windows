@@ -10,7 +10,7 @@ func (a *app) loginView(c *ui.Context, p palette) {
 	wallpaper(c, p, ui.Box(c).Fill()).Children(func() {
 		ui.Box(c).Absolute().Top(0).Left(0).Right(0).Height(max(c.TitleBar().Height, 36)).DragWindow()
 		ui.Column(c).Fill().Center().Children(func() {
-			card := ui.Column(c).Width(380).Padding(28, 28, 24).Gap(14).Radius(26).Material(glass.Glass{Clarity: 0.2})
+			card := ui.Column(c).Width(380).Padding(28, 28, 24).Gap(14).Radius(radiusWindow + 4).Material(glass.Glass{Clarity: 0.2, Tint: chrome.Tint})
 			card.Children(func() {
 				ui.Column(c).Gap(6).AlignItems(ui.Center).Padding(0, 0, 6).Children(func() {
 					ui.Box(c).Size(56, 56).Radius(15).Center().Gradient(t.Accent, p.Indigo, 135).Children(func() {
@@ -27,23 +27,26 @@ func (a *app) loginView(c *ui.Context, p palette) {
 				}
 				submit := false
 				field("服务器地址", func() {
-					in := ui.TextInput(c.Key("server"), &a.prefs.Server).Placeholder("例如 192.168.1.10:7575").Label("服务器地址")
+					in := field27(ui.TextInput(c.Key("server"), &a.prefs.Server), p).Placeholder("例如 192.168.1.10:7575").Label("服务器地址")
 					if a.prefs.Server == "" {
 						in.AutoFocus()
 					}
 					submit = in.Submitted() || submit
 				})
 				field("用户名", func() {
-					submit = ui.TextInput(c.Key("user"), &a.prefs.Username).Placeholder("admin").Label("用户名").Submitted() || submit
+					submit = field27(ui.TextInput(c.Key("user"), &a.prefs.Username), p).Placeholder("admin").Label("用户名").Submitted() || submit
 				})
 				field("密码", func() {
-					in := ui.TextInput(c.Key("password"), &a.password).Password().Label("密码")
+					in := field27(ui.TextInput(c.Key("password"), &a.password), p).Password().Label("密码")
 					if a.prefs.Server != "" && a.prefs.Username != "" {
 						in.AutoFocus()
 					}
 					submit = in.Submitted() || submit
 				})
-				ui.Checkbox(c, &a.prefs.Remember, "记住密码（保存在系统钥匙串）")
+				ui.Row(c).Gap(10).AlignItems(ui.Center).Children(func() {
+					ui.Text(c, "记住密码（保存在系统钥匙串）").FontSize(13).Grow(1)
+					glassSwitch(c, p, &a.prefs.Remember).Label("记住密码")
+				})
 				if a.loginErr != "" {
 					ui.Row(c).Gap(6).AlignItems(ui.Start).Children(func() {
 						ui.Icon(c, icWarn).FontSize(14).TextColor(p.Red)
@@ -51,19 +54,21 @@ func (a *app) loginView(c *ui.Context, p palette) {
 					})
 				}
 				ready := a.prefs.Server != "" && a.prefs.Username != "" && a.password != ""
-				login := ui.PrimaryButton(c, "登录").Disabled(a.busy || !ready).Height(36).Radius(18)
-				if a.busy {
-					login.Children(func() {
+				login := prominentButton(c, p, "登录", t.Accent, a.busy || !ready).AlignSelf(ui.Stretch)
+				login.Children(func() {
+					if a.busy {
 						ui.Spinner(c).Size(14, 14).TextColor(ui.RGB(255, 255, 255))
 						ui.Text(c, "正在登录…")
-					})
-				}
+					} else {
+						ui.Text(c, "登录")
+					}
+				})
 				if (login.Clicked() || submit) && ready && !a.busy {
 					server, user, pw := a.prefs.Server, a.prefs.Username, a.password
 					a.busy = true
 					a.spawn(func() { a.signIn(server, user, pw) })
 				}
-				if ui.Button(c, "不登录，先看看界面").Height(32).Radius(16).Background(ui.Transparent).Clicked() {
+				if ui.Button(c, "不登录，先看看界面").Height(34).Radius(17).Background(ui.Transparent).Border(0, ui.Transparent).TextColor(t.Accent).Clicked() {
 					a.enterPreview()
 				}
 			})
@@ -79,6 +84,12 @@ func (a *app) loginView(c *ui.Context, p palette) {
 			a.untrusted = nil
 		}
 	}
+}
+
+// field27 is a text field as iOS 27's forms draw one: a filled rounded
+// rectangle, without a border.
+func field27(e ui.Element, p palette) ui.Element {
+	return e.Height(38).Radius(12).Padding(0, 12).Background(p.Fill).Border(0, ui.Transparent)
 }
 
 // groupHex writes a fingerprint in pairs, eight to a line.

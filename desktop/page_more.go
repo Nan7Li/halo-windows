@@ -46,7 +46,7 @@ func (a *app) networkPage(c *ui.Context, p palette) {
 						}
 					})
 					on := tn.Running
-					sw := ui.Switch(c, &on).Label("连接 " + tn.Name).Disabled(a.deviceBusy["wg:"+tn.ID] || tn.External || !tn.Available)
+					sw := glassSwitch(c, p, &on).Label("连接 " + tn.Name).Disabled(a.deviceBusy["wg:"+tn.ID] || tn.External || !tn.Available)
 					if sw.Changed() {
 						a.setTunnel(tn, on)
 					}
@@ -102,12 +102,12 @@ func (a *app) setTunnel(t Tunnel, up bool) {
 // ---- Logs ----
 
 func (a *app) logsPage(c *ui.Context, p palette) {
-	ui.Row(c).Padding(0, 22, 10).Gap(10).AlignItems(ui.Center).Children(func() {
-		if ui.Segmented(c, &a.logLevel, "全部", "信息", "警告", "错误").Label("级别").Changed() {
+	ui.Row(c).Padding(titleBarHeight+2, 28, 12).Gap(10).AlignItems(ui.Center).Children(func() {
+		if segmented(c, p, &a.logLevel, 300, "全部", "信息", "警告", "错误").Label("级别").Changed() {
 			a.loadLogs()
 		}
 		ui.Box(c).Grow(1)
-		ui.SearchField(c, &a.logQuery).Placeholder("筛选").Width(220).Label("筛选日志")
+		ui.SearchField(c, &a.logQuery).Placeholder("筛选").Width(220).Label("筛选日志").Height(32).Radius(16).Background(p.Fill).Border(0, ui.Transparent)
 	})
 	if !a.loadState(c, p, "logs") {
 		return
@@ -119,7 +119,7 @@ func (a *app) logsPage(c *ui.Context, p palette) {
 			list = append(list, e)
 		}
 	}
-	ui.Column(c).Grow(1).MinHeight(0).Margin(0, 16, 16, 16).Radius(14).Background(p.Card).Clip().Children(func() {
+	ui.Column(c).Grow(1).MinHeight(0).Margin(0, 20, 20, 20).Radius(radiusCard).Background(p.Card).Clip().Children(func() {
 		ui.List(c, &a.logList, len(list), func(i int) {
 			e := list[i]
 			ui.Row(c).Padding(5, 14).Gap(10).AlignItems(ui.Start).Children(func() {
@@ -215,7 +215,7 @@ func (a *app) settingsPage(c *ui.Context, p palette) {
 							sel = i
 						}
 					}
-					if ui.Segmented(c, &sel, "自动", "浅色", "深色").Label("外观").Changed() {
+					if segmented(c, p, &sel, 210, "自动", "浅色", "深色").Label("外观").Changed() {
 						a.prefs.Appearance = modes[sel]
 						a.store.Save(a.prefs)
 					}
@@ -250,12 +250,14 @@ func (a *app) settingsPage(c *ui.Context, p palette) {
 				row(c, p, true, func() {
 					iconTile(c, icSettings, p.Teal)
 					ui.Column(c).Grow(1).Children(func() {
-						ui.Text(c, "侧栏玻璃")
-						ui.Text(c, "从磨砂到通透").FontSize(12).TextColor(p.Secondary)
+						ui.Text(c, "Liquid Glass")
+						ui.Text(c, "侧栏、工具栏和按钮的玻璃，从着色到透明").FontSize(12).TextColor(p.Secondary)
 					})
-					if ui.Slider(c, &a.prefs.Clarity, 0, 1).Width(200).Label("侧栏玻璃通透度").Changed() {
+					ui.Text(c, "着色").FontSize(11).TextColor(p.Secondary)
+					if glassSlider(c, p, &a.prefs.Clarity, 0, 1).Width(200).Label("玻璃透明度").Changed() {
 						a.store.Save(a.prefs)
 					}
+					ui.Text(c, "透明").FontSize(11).TextColor(p.Secondary)
 				})
 			})
 
@@ -266,7 +268,7 @@ func (a *app) settingsPage(c *ui.Context, p palette) {
 						ui.Text(c, "新短信和来电")
 						ui.Text(c, "客户端打开时用系统通知提醒").FontSize(12).TextColor(p.Secondary)
 					})
-					if ui.Switch(c, &a.prefs.Notify).Label("新短信和来电通知").Changed() {
+					if glassSwitch(c, p, &a.prefs.Notify).Label("新短信和来电通知").Changed() {
 						a.store.Save(a.prefs)
 					}
 				})

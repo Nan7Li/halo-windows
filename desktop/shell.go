@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -91,11 +90,10 @@ func (a *app) mainView(c *ui.Context, p palette) {
 	wallpaper(c, p, ui.Box(c).Fill()).Children(func() {
 		ui.Row(c).Fill().AlignItems(ui.Stretch).Children(func() {
 			a.sidebar(c, p)
-			ui.Column(c).Grow(1).MinWidth(0).Children(func() {
-				if a.page != pageMessages {
-					a.titleBar(c, p)
-				}
-				ui.Column(c).Grow(1).MinHeight(0).Children(func() {
+			// The page scrolls under its toolbar, which floats over it on
+			// the scroll edge effect, as macOS 27's.
+			ui.Box(c).Grow(1).MinWidth(0).Children(func() {
+				ui.Column(c.Key("page:" + a.page)).Fill().Children(func() {
 					switch a.page {
 					case pageMessages:
 						a.messagesPage(c, p)
@@ -112,28 +110,42 @@ func (a *app) mainView(c *ui.Context, p palette) {
 					default:
 						a.todayPage(c, p)
 					}
-				})
+				}).Transition(ui.ElementTransition{Enter: &ui.Motion{Y: 10, Opacity: 0}, Animation: &ui.Snappy})
+				if a.page != pageMessages {
+					if a.page == pageToday || a.page == pageNetwork || a.page == pageSettings {
+						scrollEdge(c, titleBarHeight+18, p.Grouped.Alpha(0.55), false)
+					}
+					a.titleBar(c, p)
+				}
 			})
 		})
 		a.callBanner(c, p)
 	})
 }
 
-// sidebarItem is a row of the sidebar: a tinted icon and a label, with a
-// gray capsule behind the page shown, as the Mac's source lists.
+// sidebarSel is the identity of the sidebar's selection, which slides
+// from the row chosen before to the one chosen now.
+type sidebarSel struct{}
+
+// sidebarItem is a row of the sidebar: a tinted icon and a label, on a
+// capsule that slides on a spring to the page chosen, as iOS 27's.
 func sidebarItem(c *ui.Context, p palette, key any, selected bool, fn func()) ui.Element {
-	r := ui.Row(c.Key(key)).Height(28).Padding(0, 8).Gap(8).Radius(7).AlignItems(ui.Center).
+	r := ui.Row(c.Key(key)).Height(30).Padding(0, 9).Gap(9).Radius(radiusItem).AlignItems(ui.Center).
 		Cursor(ui.CursorPointer).Role(ui.RoleTab).AccessSelected(selected)
-	sel, hover := ui.RGBA(118, 118, 128, 0.17), ui.RGBA(118, 118, 128, 0.08)
+	sel, hover := ui.RGBA(118, 118, 128, 0.18), ui.RGBA(118, 118, 128, 0.08)
 	if p.dark {
-		sel, hover = ui.RGBA(255, 255, 255, 0.12), ui.RGBA(255, 255, 255, 0.06)
+		sel, hover = ui.RGBA(255, 255, 255, 0.13), ui.RGBA(255, 255, 255, 0.06)
 	}
-	if selected {
-		r.Background(sel)
-	} else if r.Hovered() {
+	if !selected && r.Hovered() {
 		r.Background(hover)
 	}
-	return r.Children(fn)
+	return r.Children(func() {
+		if selected {
+			ui.Box(c.Key(sidebarSel{})).Absolute().Fill().Radius(radiusItem).Background(sel).ZIndex(-1).PassThrough().
+				Transition(ui.ElementTransition{Match: sidebarSel{}, Animation: &ui.Snappy, Position: true, Size: true})
+		}
+		fn()
+	})
 }
 
 func (a *app) sidebar(c *ui.Context, p palette) {
@@ -149,7 +161,7 @@ func (a *app) sidebar(c *ui.Context, p palette) {
 		}
 	}
 	pane := ui.Column(c).Width(sidebarWidth).Shrink(0).Margin(sidebarInset, 0, sidebarInset, sidebarInset).
-		Radius(16).Material(glass.Glass{Clarity: float32(a.prefs.Clarity)})
+		Radius(radiusSidebar).Material(pane())
 	pane.Children(func() {
 		// The window controls sit inset over the top of the sidebar on
 		// macOS; elsewhere the top is room to drag the window by.
@@ -174,7 +186,7 @@ func (a *app) sidebar(c *ui.Context, p palette) {
 					ui.Icon(c, pg.icon).FontSize(17).TextColor(t.Accent).Shrink(0)
 					ui.Text(c, pg.title).Grow(1).SingleLine()
 					if badge > 0 {
-						b := ui.Text(c, fmt.Sprint(badge)).FontSize(11).Bold().Padding(1, 6).Radius(9)
+						b := ui.Text(c, fmt.Sprint(badge)).FontSize(11).Bold().Padding(1, 7).Radius(9)
 						if red {
 							b.Background(p.Red).TextColor(ui.RGB(255, 255, 255))
 						} else {
@@ -309,16 +321,18 @@ func (a *app) goTo(page string) {
 // Linux at its right, with the page's refresh button.
 func (a *app) titleBar(c *ui.Context, p palette) {
 	bar := c.TitleBar()
-	ui.Row(c).Height(titleBarHeight).Shrink(0).AlignItems(ui.Center).Padding(0, bar.Right+14, 0, 28).Gap(10).DragWindow().Children(func() {
+	ui.Row(c).Absolute().Top(0).Left(0).Right(0).Height(titleBarHeight).AlignItems(ui.Center).Padding(0, bar.Right+14, 0, 28).Gap(10).DragWindow().Children(func() {
 		ui.Text(c, pageTitle(a.page)).FontSize(15).Bold().SingleLine()
 		ui.Box(c).Grow(1)
 		if key := pageDataKey(a.page); key != "" {
 			if a.refreshing[key] && a.loaded[key] {
 				ui.Spinner(c).Size(14, 14)
 			}
-			if glassIconButton(c, icRefresh, "刷新").Clicked() {
-				a.refreshPage()
-			}
+			toolbarGroup(c, func() {
+				if toolButton(c, p, icRefresh, "刷新").Clicked() {
+					a.refreshPage()
+				}
+			})
 		}
 	})
 }
@@ -365,15 +379,6 @@ func (a *app) refreshPage() {
 	}
 }
 
-// glassIconButton is a round button of interactive glass, as the toolbar
-// buttons of macOS 26.
-func glassIconButton(c *ui.Context, ic *ui.SVG, label string) ui.Element {
-	return ui.Box(c).Size(36, 36).Radius(18).Center().Cursor(ui.CursorPointer).
-		Material(glass.Glass{Interactive: true}).Role(ui.RoleButton).Label(label).Tooltip(label).Children(func() {
-		ui.Icon(c, ic).FontSize(18)
-	})
-}
-
 // callBanner floats over the content while a call is ringing or in
 // progress, as the call's Live Activity does at the top of an iPhone.
 func (a *app) callBanner(c *ui.Context, p palette) {
@@ -409,8 +414,8 @@ func (a *app) callBanner(c *ui.Context, p palette) {
 	left := float32(sidebarWidth + sidebarInset)
 	ui.Row(c).Absolute().Top(10).Left(left).Right(0).Justify(ui.Center).PassThrough().Children(func() {
 		ui.Row(c).Width(440).Padding(10, 12, 10, 16).Gap(12).AlignItems(ui.Center).Radius(28).
-			Material(glass.Glass{}).Shadow(0, 10, 30, 0, ui.RGBA(0, 0, 0, 0.18)).Role(ui.RoleStatus).Label("通话").Children(func() {
-			ui.Avatar(c, initials(l.Number), nil).Size(36, 36)
+			Material(pane()).Shadow(0, 10, 30, 0, ui.RGBA(0, 0, 0, 0.18)).Role(ui.RoleStatus).Label("通话").Children(func() {
+			avatar(c, p, l.Number, 36)
 			ui.Column(c).Grow(1).MinWidth(0).Children(func() {
 				ui.Text(c, displayNumber(l.Number)).Bold().SingleLine()
 				sub := state
@@ -431,23 +436,11 @@ func (a *app) callBanner(c *ui.Context, p palette) {
 	})
 }
 
-// roundButton is a filled circle with a white glyph, as the call buttons.
-func roundButton(c *ui.Context, ic *ui.SVG, fill color, size float32, label string) ui.Element {
-	b := ui.Box(c).Size(size, size).Radius(size / 2).Center().Background(fill).Cursor(ui.CursorPointer).Role(ui.RoleButton).Label(label).Tooltip(label)
-	if b.Pressed() {
-		b.Background(fill.Mix(ui.RGB(0, 0, 0), 0.18))
-	}
-	b.Children(func() {
-		ui.Icon(c, ic).FontSize(size * 0.48).TextColor(ui.RGB(255, 255, 255))
-	})
-	return b
-}
-
 // ---- Shared pieces of pages ----
 
 // pageScroll is the scrolling body of a page.
 func pageScroll(c *ui.Context, fn func()) ui.Element {
-	return ui.Scroll(c).Grow(1).Padding(4, 28, 28, 28).Gap(20).Children(fn)
+	return ui.Scroll(c).Grow(1).Padding(titleBarHeight+4, 28, 28, 28).Gap(20).Children(fn)
 }
 
 // section is an inset grouped list: a small title over a rounded card.
@@ -456,25 +449,25 @@ func section(c *ui.Context, p palette, title string, fn func()) {
 		if title != "" {
 			ui.Text(c, title).FontSize(11).TextColor(p.Secondary).Padding(0, 12)
 		}
-		ui.Column(c).Radius(12).Background(p.Card).Clip().Children(fn)
+		ui.Column(c).Radius(radiusSection).Background(p.Card).Clip().Children(fn)
 	})
 }
 
 // row is a row of a grouped list, with a hairline under it unless last.
 func row(c *ui.Context, p palette, last bool, fn func()) ui.Element {
-	r := ui.Row(c).MinHeight(38).Padding(6, 12).Gap(10).AlignItems(ui.Center)
+	r := ui.Row(c).MinHeight(40).Padding(6, 14).Gap(10).AlignItems(ui.Center)
 	return r.Children(func() {
 		fn()
 		if !last {
 			// The hairline starts after the icon, as iOS's inset rows.
-			ui.Box(c).Absolute().Left(44).Right(0).Bottom(0).Height(1).Background(p.Separator)
+			ui.Box(c).Absolute().Left(48).Right(0).Bottom(0).Height(1).Background(p.Separator)
 		}
 	})
 }
 
 // iconTile is the rounded square of color in Settings' rows.
 func iconTile(c *ui.Context, ic *ui.SVG, fill color) {
-	ui.Box(c).Size(22, 22).Radius(6).Center().Background(fill).Shrink(0).Children(func() {
+	ui.Box(c).Size(24, 24).Radius(7).Center().Background(fill).Shrink(0).Children(func() {
 		ui.Icon(c, ic).FontSize(14).TextColor(ui.RGB(255, 255, 255))
 	})
 }
@@ -514,7 +507,7 @@ func (a *app) loadState(c *ui.Context, p palette, key string) bool {
 // errorBanner shows a failed refresh over data that loaded before.
 func (a *app) errorBanner(c *ui.Context, p palette, key string) {
 	if err := a.loadErr[key]; err != "" && a.loaded[key] {
-		ui.Row(c).Padding(8, 12).Gap(8).Radius(10).AlignItems(ui.Center).Background(p.Orange.Alpha(0.14)).Children(func() {
+		ui.Row(c).Padding(8, 14).Gap(8).Radius(radiusRow).AlignItems(ui.Center).Background(p.Orange.Alpha(0.14)).Children(func() {
 			ui.Icon(c, icWarn).FontSize(15).TextColor(p.Orange)
 			ui.Text(c, "刷新失败："+err).FontSize(12).Grow(1)
 		})

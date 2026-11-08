@@ -78,7 +78,7 @@ func sectionHeader(c *ui.Context, p palette, title string, all func()) {
 // widget is a card of the dashboard, as an iOS widget: a tinted title and
 // what it shows below it.
 func widget(c *ui.Context, p palette, ic *ui.SVG, tint color, title string, fn func()) ui.Element {
-	return ui.Column(c).Grow(1).Basis(0).MinWidth(0).Height(168).Padding(14, 16).Gap(8).Radius(14).Background(p.Card).Children(func() {
+	return ui.Column(c).Grow(1).Basis(0).MinWidth(0).Height(168).Padding(16, 18).Gap(8).Radius(radiusCard).Background(p.Card).Children(func() {
 		ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
 			ui.Icon(c, ic).FontSize(15).TextColor(tint)
 			ui.Text(c, title).FontSize(12).TextColor(tint)
@@ -239,7 +239,7 @@ func (a *app) netWidget(c *ui.Context, p palette) {
 }
 
 func (a *app) recentCalls(c *ui.Context, p palette) {
-	ui.Column(c).Radius(12).Background(p.Card).Clip().Children(func() {
+	ui.Column(c).Radius(radiusSection).Background(p.Card).Clip().Children(func() {
 		if len(a.calls) == 0 {
 			ui.Text(c, "没有通话记录").TextColor(p.Secondary).Padding(14)
 			return
@@ -266,7 +266,7 @@ func (a *app) recentCalls(c *ui.Context, p palette) {
 }
 
 func (a *app) recentMessages(c *ui.Context, p palette) {
-	ui.Column(c).Radius(12).Background(p.Card).Clip().Children(func() {
+	ui.Column(c).Radius(radiusSection).Background(p.Card).Clip().Children(func() {
 		if len(a.contacts) == 0 {
 			ui.Text(c, "没有短信").TextColor(p.Secondary).Padding(14)
 			return
@@ -295,7 +295,7 @@ func (a *app) recentMessages(c *ui.Context, p palette) {
 }
 
 func (a *app) deviceRows(c *ui.Context, p palette) {
-	ui.Column(c).Radius(12).Background(p.Card).Clip().Children(func() {
+	ui.Column(c).Radius(radiusSection).Background(p.Card).Clip().Children(func() {
 		if len(a.devices) == 0 {
 			ui.Text(c, "还没有设备").TextColor(p.Secondary).Padding(14)
 			return

@@ -22,11 +22,11 @@ func (a *app) devicesPage(c *ui.Context, p palette) {
 	if a.deviceID == "" || a.deviceByID(a.deviceID) == nil {
 		a.deviceID = a.devices[0].ID
 	}
-	ui.Row(c).Grow(1).MinHeight(0).Gap(24).Padding(4, 28, 0, 28).AlignItems(ui.Stretch).Children(func() {
+	ui.Row(c).Grow(1).MinHeight(0).Gap(24).Padding(titleBarHeight+4, 28, 0, 28).AlignItems(ui.Stretch).Children(func() {
 		ui.Column(c).Width(320).Shrink(0).Gap(10).Children(func() {
-			ui.SearchField(c, &a.deviceQuery).Placeholder("搜索设备 / ICCID / IMEI").Label("搜索设备").Radius(9).Background(p.Fill).Border(0, ui.Transparent)
+			ui.SearchField(c, &a.deviceQuery).Placeholder("搜索设备 / ICCID / IMEI").Label("搜索设备").Height(32).Radius(16).Background(p.Fill).Border(0, ui.Transparent)
 			list := a.filteredDevices()
-			ui.Column(c).Radius(12).Background(p.Card).Clip().Children(func() {
+			ui.Column(c).Radius(radiusSection).Background(p.Card).Clip().Children(func() {
 				for i, d := range list {
 					a.deviceRow(c, p, d, i == len(list)-1)
 				}
@@ -113,7 +113,7 @@ func shortStatus(s string) string {
 // actionTile is one of the device's controls: an icon over a label, filled
 // in its color while what it controls is on.
 func actionTile(c *ui.Context, p palette, ic *ui.SVG, label string, col color, on, busy bool) ui.Element {
-	b := ui.Column(c.Key(label)).Grow(1).Basis(0).MinWidth(0).Height(54).Radius(12).Gap(3).Center().Cursor(ui.CursorPointer).
+	b := ui.Column(c.Key(label)).Grow(1).Basis(0).MinWidth(0).Height(58).Radius(radiusRow + 2).Gap(3).Center().Cursor(ui.CursorPointer).
 		Role(ui.RoleButton).Label(label).Disabled(busy)
 	fg := col
 	if on {
@@ -125,6 +125,7 @@ func actionTile(c *ui.Context, p palette, ic *ui.SVG, label string, col color, o
 			b.Background(p.FillPressed)
 		}
 	}
+	b.AnimatePose(ui.Pose{Scale: map[bool]float32{true: 0.95, false: 1}[b.Pressed()]}, ui.Bouncy)
 	return b.Children(func() {
 		ui.Icon(c, ic).FontSize(18).TextColor(fg)
 		ui.Text(c, label).FontSize(11).TextColor(fg).SingleLine()
@@ -134,7 +135,7 @@ func actionTile(c *ui.Context, p palette, ic *ui.SVG, label string, col color, o
 func (a *app) deviceDetail(c *ui.Context, p palette, d Device) {
 	busy := a.deviceBusy[d.ID]
 	ui.Row(c).Gap(12).AlignItems(ui.Center).Padding(0, 4).Children(func() {
-		ui.Box(c).Size(52, 52).Radius(13).Center().Background(p.Card).Shadow(0, 1, 3, 0, ui.RGBA(0, 0, 0, 0.08)).Children(func() {
+		ui.Box(c).Size(52, 52).Radius(14).Center().Background(p.Card).Shadow(0, 1, 3, 0, ui.RGBA(0, 0, 0, 0.08)).Children(func() {
 			ui.Icon(c, icDevices).FontSize(28).TextColor(p.Secondary)
 		})
 		ui.Column(c).Grow(1).MinWidth(0).Children(func() {
@@ -178,7 +179,7 @@ func (a *app) deviceDetail(c *ui.Context, p palette, d Device) {
 		a.setDevice(d.ID, func(x *Device) { x.ModemPhase = "rebooting" }, "重启指令已送达", func(ctx context.Context) error { return a.api.Reboot(ctx, d.ID) })
 	}
 	card := func(title string, fn func()) ui.Element {
-		return ui.Column(c).Grow(1).Basis(0).MinWidth(0).Padding(14, 16).Gap(10).Radius(14).Background(p.Card).Children(func() {
+		return ui.Column(c).Grow(1).Basis(0).MinWidth(0).Padding(16, 18).Gap(10).Radius(radiusCard).Background(p.Card).Children(func() {
 			ui.Text(c, title).FontSize(11).Bold().TextColor(p.Secondary)
 			fn()
 		})
@@ -204,7 +205,7 @@ func (a *app) deviceDetail(c *ui.Context, p palette, d Device) {
 			if d.VoWiFiEnabled {
 				text = "WiFi-Calling · " + vowifiState(d)
 			}
-			ui.Row(c).Padding(10, 14).Gap(8).Radius(10).AlignItems(ui.Center).Background(col.Alpha(0.12)).Children(func() {
+			ui.Row(c).Padding(10, 14).Gap(8).Radius(radiusCard - 8).AlignItems(ui.Center).Background(col.Alpha(0.12)).Children(func() {
 				dot(c, col)
 				ui.Text(c, text).Bold().TextColor(col).Grow(1).MaxLines(2)
 			})

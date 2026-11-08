@@ -114,7 +114,8 @@ func (a *app) applyTheme(c *ui.Context) palette {
 	t.Danger = p.Red
 	t.Success = p.Green
 	t.Warning = p.Orange
-	t.Radius = 7
+	t.Radius = 8
+	chrome = glassFor(p, a.prefs.Clarity)
 	// macOS's body text (SF Pro 13): the web UI's desktop metrics.
 	t.FontSize = 13
 	t.InactiveAccent = t.Accent
