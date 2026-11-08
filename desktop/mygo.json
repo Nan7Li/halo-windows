@@ -1,0 +1,19 @@
+{
+  "name": "Halo",
+  "slug": "halo-desktop",
+  "identifier": "com.nan7li.halo.desktop",
+  "version": "1.0.0",
+  "copyright": "© 2026 Nan7Li",
+  "publisher": "Nan7Li",
+  "out": "build",
+  "linux": {
+    "maintainer": "Nan7Li <nan7li@users.noreply.github.com>",
+    "comment": "Halo 远程手机：短信、电话和模组",
+    "categories": [
+      "Network",
+      "Telephony"
+    ],
+    "command": "halo-desktop",
+    "webview": false
+  }
+}

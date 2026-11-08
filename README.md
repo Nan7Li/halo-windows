@@ -1,5 +1,7 @@
 # Halo Desktop
 
+> **新版客户端在 [`desktop/`](desktop/README.md)**：用 MyGo 写的 Go 原生客户端，同一套代码支持 Windows、macOS 和 Linux。下面的 WPF 版本（`src/`）只支持 Windows，保留供参考，之后不再更新。
+
 Windows 原生客户端，给 [Halo](https://github.com/Nan7Li/VoCat)（基于 VoCat 的个人发行版）用。
 
 这不是网页套壳：界面是 **WPF** 自己画的，数据走 Halo 的 HTTP API（Cookie + CSRF）。布局接近桌面聊天软件（左侧栏 + 会话），视觉走 iOS 26/27 那一路的玻璃、圆角和过冲动画。
