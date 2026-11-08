@@ -56,6 +56,7 @@ type app struct {
 
 	// Data
 	host       DashboardHost
+	netHist    [][2]float64 // the last samples of rx and tx, oldest first
 	devices    []Device
 	tasks      []Task
 	contacts   []Contact
@@ -88,6 +89,7 @@ type app struct {
 
 	// Devices
 	deviceID    string
+	deviceQuery string
 	rebootAsk   bool
 	deviceBusy  map[string]bool
 	logLevel    int
@@ -296,10 +298,21 @@ func (a *app) refreshAll() {
 func (a *app) loadHost() {
 	a.load("host", func(ctx context.Context) (func(), error) {
 		if a.api.Preview() {
-			return func() { a.host = demoHost() }, nil
+			return func() {
+				a.host = demoHost()
+				if len(a.netHist) == 0 {
+					a.netHist = demoNetHistory()
+				}
+			}, nil
 		}
 		h, err := a.api.Host(ctx)
-		return func() { a.host = h }, err
+		return func() {
+			a.host = h
+			a.netHist = append(a.netHist, [2]float64{h.Perf.NetRxBps, h.Perf.NetTxBps})
+			if len(a.netHist) > 40 {
+				a.netHist = a.netHist[len(a.netHist)-40:]
+			}
+		}, err
 	})
 }
 

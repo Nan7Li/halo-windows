@@ -10,10 +10,7 @@ import (
 
 // messagesPage is Messages for the Mac: conversations beside the one open.
 func (a *app) messagesPage(c *ui.Context, p palette) {
-	if !a.loadState(c, p, "contacts") {
-		return
-	}
-	ui.Row(c).Grow(1).MinHeight(0).Margin(0, 16, 16, 16).Radius(16).Background(p.Card).Clip().AlignItems(ui.Stretch).Children(func() {
+	ui.Row(c).Grow(1).MinHeight(0).Margin(sidebarInset, sidebarInset, sidebarInset, sidebarInset).Radius(14).Background(p.Card).Clip().AlignItems(ui.Stretch).Children(func() {
 		a.conversationList(c, p)
 		ui.Box(c).Width(1).Background(p.Separator)
 		ui.Column(c).Grow(1).MinWidth(0).Children(func() {
@@ -46,50 +43,59 @@ func (a *app) filteredContacts() []Contact {
 func (a *app) conversationList(c *ui.Context, p palette) {
 	t := c.Theme()
 	list := a.filteredContacts()
-	ui.Column(c).Width(300).Shrink(0).Children(func() {
-		ui.Row(c).Padding(12, 12, 8).Gap(8).AlignItems(ui.Center).Children(func() {
-			ui.SearchField(c, &a.search).Placeholder("搜索").Grow(1).Label("搜索短信")
-			b := ui.Box(c).Size(30, 30).Radius(15).Center().Cursor(ui.CursorPointer).Role(ui.RoleButton).Label("新信息").Tooltip("新信息")
-			if b.Hovered() {
-				b.Background(p.Fill)
+	ui.Column(c).Width(320).Shrink(0).Children(func() {
+		bar := c.TitleBar()
+		ui.Row(c).Height(titleBarHeight-sidebarInset).Shrink(0).Padding(0, 10, 0, 16).Gap(8).AlignItems(ui.Center).DragWindow().Children(func() {
+			ui.Text(c, "信息").FontSize(15).Bold().Grow(1)
+			if a.refreshing["contacts"] && a.loaded["contacts"] {
+				ui.Spinner(c).Size(14, 14)
 			}
-			b.Children(func() { ui.Icon(c, icCompose).FontSize(17).TextColor(t.Accent) })
-			if b.Clicked() {
+			if glassIconButton(c, icRefresh, "刷新").Clicked() {
+				a.refreshPage()
+			}
+			if glassIconButton(c, icCompose, "新信息").Clicked() {
 				a.composeOpen, a.selected, a.draft = true, "", ""
 				if lines := a.smsLines(); len(lines) > 0 && a.composeLine == "" {
 					a.composeLine = lines[0].ID
 				}
 			}
 		})
+		_ = bar
+		ui.Row(c).Padding(2, 12, 8).Gap(8).AlignItems(ui.Center).Children(func() {
+			ui.SearchField(c, &a.search).Placeholder("搜索").Grow(1).Label("搜索短信").Radius(9).Background(p.Fill).Border(0, ui.Transparent)
+		})
+		if !a.loadState(c, p, "contacts") {
+			return
+		}
 		ui.List(c, nil, len(list), func(i int) {
 			k := list[i]
 			key := k.Key()
 			sel := key == a.selected && !a.composeOpen
-			r := ui.Row(c.Key(key)).Padding(10, 12).Margin(0, 8).Gap(10).Radius(10).AlignItems(ui.Center).Cursor(ui.CursorPointer)
+			r := ui.Row(c.Key(key)).Padding(9, 10, 9, 6).Margin(0, 8).Gap(8).Radius(10).AlignItems(ui.Center).Cursor(ui.CursorPointer)
 			if sel {
 				r.Background(t.Accent)
 			} else if r.Hovered() {
-				r.Background(p.Fill)
+				r.Background(p.Fill.Alpha(0.06))
 			}
 			fg, sub := p.Label, p.Secondary
 			if sel {
-				fg, sub = ui.RGB(255, 255, 255), ui.RGBA(255, 255, 255, 0.78)
+				fg, sub = ui.RGB(255, 255, 255), ui.RGBA(255, 255, 255, 0.82)
 			}
 			r.Children(func() {
-				ui.Box(c).Width(8).Shrink(0).Children(func() {
+				ui.Box(c).Width(8).Shrink(0).Center().Children(func() {
 					if k.UnreadCount > 0 && !sel {
-						dot(c, t.Accent)
+						ui.Box(c).Size(8, 8).Radius(4).Background(t.Accent)
 					}
 				})
-				ui.Avatar(c, initials(k.Title()), nil).Size(40, 40)
-				ui.Column(c).Grow(1).MinWidth(0).Gap(2).Children(func() {
+				avatar(c, p, k.Title(), 40)
+				ui.Column(c).Grow(1).MinWidth(0).Gap(1).Children(func() {
 					ui.Row(c).Gap(6).AlignItems(ui.Center).Children(func() {
-						ui.Text(c, k.Title()).FontSize(14).Bold().SingleLine().Grow(1).TextColor(fg)
+						ui.Text(c, k.Title()).Bold().SingleLine().Grow(1).TextColor(fg)
 						ui.Text(c, relTime(k.LastTime, a.now())).FontSize(12).TextColor(sub)
 					})
-					ui.Text(c, k.LastMessage).FontSize(13).TextColor(sub).MaxLines(2)
+					ui.Text(c, k.LastMessage).FontSize(12).TextColor(sub).MaxLines(2)
 					if k.DeviceName != "" && len(a.devices) > 1 {
-						ui.Text(c, k.DeviceName).FontSize(11).TextColor(sub).SingleLine()
+						ui.Text(c, joinDot(k.DeviceName, k.LocalPhone)).FontSize(11).TextColor(sub).SingleLine()
 					}
 				})
 			})
@@ -117,22 +123,25 @@ func (a *app) conversation(c *ui.Context, p palette) {
 	}
 	t := c.Theme()
 	ui.Column(c).Grow(1).MinHeight(0).Children(func() {
-		ui.Row(c).Padding(10, 18).Gap(10).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(p.Separator).Children(func() {
-			ui.Avatar(c, initials(k.Title()), nil).Size(32, 32)
-			ui.Column(c).Grow(1).MinWidth(0).Children(func() {
-				ui.Text(c, k.Title()).Bold().SingleLine()
+		ui.Box(c).Shrink(0).BorderWidth(0, 0, 1, 0).BorderColor(p.Separator).DragWindow().Children(func() {
+			ui.Column(c).Padding(10, 0, 10).Gap(4).AlignItems(ui.Center).Children(func() {
+				avatar(c, p, k.Title(), 40)
+				ui.Text(c, k.Title()).FontSize(11).Padding(1, 8).Radius(9).Background(p.Fill).SingleLine()
 				sub := k.Peer
 				if k.Title() == k.Peer {
 					sub = ""
 				}
-				ui.Text(c, joinDot(sub, k.DeviceName)).FontSize(12).TextColor(p.Secondary).SingleLine()
+				if s := joinDot(sub, k.DeviceName); s != "" {
+					ui.Text(c, s).FontSize(11).TextColor(p.Secondary).SingleLine()
+				}
 			})
 			if isDialable(k.Peer) {
-				b := glassIconButton(c, icPhone, "呼叫 "+k.Peer)
-				if b.Clicked() {
-					a.dialLine = k.DeviceID
-					a.dial(k.Peer)
-				}
+				ui.Box(c).Absolute().Top(0).Bottom(0).Right(c.TitleBar().Right + 14).Center().Children(func() {
+					if glassIconButton(c, icPhone, "呼叫 "+k.Peer).Clicked() {
+						a.dialLine = k.DeviceID
+						a.dial(k.Peer)
+					}
+				})
 			}
 		})
 		ui.Box(c).Grow(1).MinHeight(0).Children(func() {
@@ -148,12 +157,16 @@ func (a *app) conversation(c *ui.Context, p palette) {
 						ui.Text(c, bubbleTime(m.Timestamp, a.now())).FontSize(11).TextColor(p.Secondary).AlignSelf(ui.Center).Padding(10, 0, 4)
 					}
 					mine := m.Mine()
-					ui.Row(c).Justify(map[bool]ui.Align{true: ui.End, false: ui.Start}[mine]).Children(func() {
-						bub := ui.Text(c, m.Text()).Selectable().Padding(8, 13).Radius(18).MaxWidthPercent(72).FontSize(14)
-						if mine {
-							bub.Background(t.Accent).TextColor(ui.RGB(255, 255, 255))
-						} else {
-							bub.Background(p.BubbleOther).TextColor(p.Label)
+					// The last bubble of a run from one side has a tail.
+					tail := i == len(msgs)-1 || msgs[i+1].Mine() != mine || msgs[i+1].Timestamp.Sub(m.Timestamp) > time.Hour
+					fill, fg := p.BubbleOther, p.Label
+					if mine {
+						fill, fg = t.Accent, ui.RGB(255, 255, 255)
+					}
+					ui.Row(c).Justify(map[bool]ui.Align{true: ui.End, false: ui.Start}[mine]).Padding(0, 6).Children(func() {
+						bub := ui.Text(c, m.Text()).Selectable().Padding(7, 12).Radius(17).MaxWidthPercent(70).Background(fill).TextColor(fg)
+						if tail {
+							bub.Draw(func(pt *ui.Painter, r ui.Rect) { bubbleTail(pt, r, mine, fill) })
 						}
 						bub.Tooltip(m.Timestamp.Local().Format("2006-01-02 15:04:05"))
 					})
@@ -250,6 +263,21 @@ func (a *app) composeView(c *ui.Context, p palette) {
 			a.composer(c, p, func() { a.sendNew() }, "短信")
 		})
 	})
+}
+
+// bubbleTail draws the tail at a bubble's bottom corner, on the side of
+// who sent it, as Messages does.
+func bubbleTail(pt *ui.Painter, r ui.Rect, right bool, fill color) {
+	b := r.Y + r.H
+	path := &ui.Path{}
+	if right {
+		e := r.X + r.W
+		path.MoveTo(e-16, b).LineTo(e+5, b).QuadTo(e-1, b-3, e-1, b-15).LineTo(e-16, b-15).Close()
+	} else {
+		e := r.X
+		path.MoveTo(e+16, b).LineTo(e-5, b).QuadTo(e+1, b-3, e+1, b-15).LineTo(e+16, b-15).Close()
+	}
+	pt.FillPath(path, fill)
 }
 
 func deliveryText(m Message) string {

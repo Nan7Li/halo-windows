@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/egoist/mygo/plugins/glass"
 	"github.com/egoist/mygo/ui"
 )
 
@@ -13,16 +14,52 @@ var keypad = []struct{ digit, letters string }{
 	{"*", ""}, {"0", "+"}, {"#", ""},
 }
 
-// phonePage is the keypad beside the recent calls, as Phone on the Mac.
+// phonePage is the keypad beside the recent calls, as the web UI's phone
+// page on the desktop.
 func (a *app) phonePage(c *ui.Context, p palette) {
-	ui.Row(c).Grow(1).MinHeight(0).Gap(16).Padding(0, 16, 16, 16).AlignItems(ui.Stretch).Children(func() {
-		ui.Column(c).Width(320).Shrink(0).Radius(16).Background(p.Card).Padding(18).Gap(14).AlignItems(ui.Center).Children(func() {
+	ui.Row(c).Grow(1).MinHeight(0).Gap(32).Padding(4, 28, 28, 28).AlignItems(ui.Start).Children(func() {
+		ui.Column(c).Width(360).Shrink(0).Radius(14).Background(p.Card).Padding(20, 20, 24).Gap(16).AlignItems(ui.Center).Children(func() {
 			a.keypad(c, p)
 		})
-		ui.Column(c).Grow(1).MinWidth(0).Radius(16).Background(p.Card).Clip().Children(func() {
+		ui.Column(c).Grow(1).MinWidth(0).MaxHeightPercent(100).Gap(14).Children(func() {
 			a.recents(c, p)
 		})
 	})
+}
+
+// lineChip is a capsule of glass naming a line, whose menu chooses another.
+func (a *app) lineChip(c *ui.Context, p palette, lines []Device, chosen string, choose func(id string)) {
+	if len(lines) == 0 {
+		return
+	}
+	d := lines[0]
+	for _, l := range lines {
+		if l.ID == chosen {
+			d = l
+		}
+	}
+	chip := ui.Row(c).Height(32).Padding(0, 12).Gap(6).Radius(16).AlignItems(ui.Center).Cursor(ui.CursorPointer).
+		Material(glass.Glass{Interactive: true}).Role(ui.RoleMenuButton).Label("线路：" + d.Title())
+	chip.Children(func() {
+		_, tone := d.Status()
+		dot(c, p.tone(tone))
+		ui.Text(c, d.Title()).SingleLine()
+		if k := lineKind(d); k != "" {
+			ui.Text(c, "· "+k).FontSize(12).TextColor(p.Secondary)
+		}
+		if len(lines) > 1 {
+			ui.Icon(c, icChevronDown).FontSize(12).TextColor(p.Secondary)
+		}
+	})
+	if len(lines) > 1 {
+		chip.Menu(func(m *ui.Menu) {
+			for _, l := range lines {
+				if m.Item(l.Title()).Checked(l.ID == d.ID).Chosen() {
+					choose(l.ID)
+				}
+			}
+		})
+	}
 }
 
 func (a *app) keypad(c *ui.Context, p palette) {
@@ -33,41 +70,28 @@ func (a *app) keypad(c *ui.Context, p palette) {
 			ui.Text(c, "没有可通话的线路。在“设备”里开启 WiFi 通话，等 IMS 注册后即可拨打。").FontSize(12).Grow(1)
 		})
 	} else {
-		names := make([]string, len(lines))
-		chosen := lines[0].Title()
-		for i, d := range lines {
-			names[i] = d.Title()
-			if d.ID == a.dialLine {
-				chosen = d.Title()
-			}
-		}
-		if ui.Select(c, &chosen, names).Label("拨号线路").Width(220).Changed() {
-			for _, d := range lines {
-				if d.Title() == chosen {
-					a.dialLine = d.ID
-				}
-			}
-		}
+		a.lineChip(c, p, lines, a.dialLine, func(id string) { a.dialLine = id })
 	}
 	// The number, as large as the iPhone's, shrinking as it grows.
 	size := float32(32)
 	if len(a.dialed) > 12 {
 		size = 24
 	}
-	ui.Row(c).Height(52).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
+	ui.Row(c).Height(56).AlignItems(ui.Center).Justify(ui.Center).Children(func() {
 		ui.Text(c, a.dialed).FontSize(size).SingleLine().Selectable()
 	})
-	keys := ui.Grid(c).Columns(3).Gap(14).Focusable().Label("拨号键盘")
+	keys := ui.Grid(c).Columns(3).GapX(24).GapY(16).Focusable().Label("拨号键盘")
 	keys.Children(func() {
 		for _, k := range keypad {
-			b := ui.Column(c.Key(k.digit)).Size(72, 72).Radius(36).Center().Background(p.Fill).Cursor(ui.CursorPointer).Role(ui.RoleButton).Label(k.digit)
+			b := ui.Column(c.Key(k.digit)).Size(78, 78).Radius(39).Center().Background(p.Fill).Cursor(ui.CursorPointer).
+				Role(ui.RoleButton).Label(k.digit)
 			if b.Pressed() {
 				b.Background(p.FillPressed)
 			}
 			b.Children(func() {
-				ui.Text(c, k.digit).FontSize(30)
+				ui.Text(c, k.digit).FontSize(34).LineHeight(1.05)
 				if k.letters != "" {
-					ui.Text(c, k.letters).FontSize(10).Bold().TextColor(p.Secondary).LetterSpacing(1.5)
+					ui.Text(c, k.letters).FontSize(10).Bold().LetterSpacing(1.6).LineHeight(1.2)
 				}
 			})
 			if b.Clicked() {
@@ -94,13 +118,17 @@ func (a *app) keypad(c *ui.Context, p palette) {
 	if keys.Shortcut(0, ui.KeyEnter) && a.dialed != "" && !a.callBusy && len(lines) > 0 {
 		a.dial(a.dialed)
 	}
-	ui.Row(c).Gap(14).AlignItems(ui.Center).Children(func() {
-		ui.Box(c).Size(72, 72)
-		call := roundButton(c, icCall, p.Green, 72, "呼叫").Disabled(a.dialed == "" || a.callBusy || len(lines) == 0)
+	ui.Row(c).Gap(24).AlignItems(ui.Center).Children(func() {
+		ui.Box(c).Size(78, 78)
+		fill := p.Green
+		if a.dialed == "" || len(lines) == 0 {
+			fill = p.Green.Alpha(0.4)
+		}
+		call := roundButton(c, icCall, fill, 78, "呼叫").Disabled(a.dialed == "" || a.callBusy || len(lines) == 0)
 		if call.Clicked() {
 			a.dial(a.dialed)
 		}
-		del := ui.Box(c).Size(72, 72).Center().Cursor(ui.CursorPointer).Role(ui.RoleButton).Label("删除")
+		del := ui.Box(c).Size(78, 78).Center().Cursor(ui.CursorPointer).Role(ui.RoleButton).Label("删除")
 		if a.dialed != "" {
 			del.Children(func() { ui.Icon(c, icDelete).FontSize(26).TextColor(p.Secondary) })
 			if del.Clicked() {
@@ -109,14 +137,21 @@ func (a *app) keypad(c *ui.Context, p palette) {
 			}
 		}
 	})
-	ui.Text(c, "通话音频暂不经过桌面客户端：接通后请用浏览器里的 Halo 通话，或使用模组侧的耳机。").FontSize(11).TextColor(p.Tertiary).TextAlign(ui.Center).MaxWidth(260)
+	ui.Text(c, "通话的声音不经过桌面客户端：接通后请在浏览器里的 Halo 通话。").FontSize(11).TextColor(p.Tertiary).TextAlign(ui.Center).MaxWidth(280)
 }
 
 func (a *app) recents(c *ui.Context, p palette) {
-	ui.Row(c).Padding(12, 14).Gap(10).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(p.Separator).Children(func() {
-		ui.Text(c, "最近通话").Bold().Grow(1)
-		ui.Segmented(c, &a.phoneTab, "全部", "未接").Label("筛选").Width(160)
-	})
+	missed := 0
+	for _, r := range a.calls {
+		if r.Missed() {
+			missed++
+		}
+	}
+	missedLabel := "未接"
+	if missed > 0 {
+		missedLabel = fmt.Sprintf("未接 · %d", missed)
+	}
+	ui.Segmented(c, &a.phoneTab, "全部", missedLabel).Label("筛选").Width(200)
 	if !a.loadState(c, p, "calls") {
 		return
 	}
@@ -127,42 +162,47 @@ func (a *app) recents(c *ui.Context, p palette) {
 		}
 		list = append(list, r)
 	}
-	ui.List(c, nil, len(list), func(i int) {
-		r := list[i]
-		ui.Row(c.Key(r.ID)).Padding(10, 16).Gap(12).AlignItems(ui.Center).BorderWidth(0, 0, 1, 0).BorderColor(p.Separator).Children(func() {
-			ic := icOutgoing
-			if r.Direction == "incoming" {
-				ic = icIncoming
-			}
-			ui.Icon(c, ic).FontSize(15).TextColor(p.Secondary).Width(16)
-			ui.Column(c).Grow(1).MinWidth(0).Children(func() {
-				name := ui.Text(c, displayNumber(r.Number)).FontSize(15).Bold().SingleLine()
+	if len(list) == 0 {
+		title := "没有通话记录"
+		if a.phoneTab == 1 {
+			title = "没有未接来电"
+		}
+		emptyState(c, p, icPhone, title, "")
+		return
+	}
+	ui.Column(c).Radius(12).Background(p.Card).Clip().Children(func() {
+		for i, r := range list {
+			row(c.Key(r.ID), p, i == len(list)-1, func() {
+				ic := icOutgoing
+				if r.Direction == "incoming" {
+					ic = icIncoming
+				}
+				col := p.Secondary
 				if r.Missed() {
-					name.TextColor(p.Red)
+					col = p.Red
 				}
-				ui.Text(c, joinDot(a.lineName(r.DeviceID), transportName(r.Transport), formatDuration(r.DurationSeconds))).FontSize(12).TextColor(p.Secondary).SingleLine()
+				ui.Box(c).Width(22).Center().Shrink(0).Children(func() { ui.Icon(c, ic).FontSize(16).TextColor(col) })
+				ui.Column(c).Grow(1).MinWidth(0).Children(func() {
+					name := ui.Text(c, displayNumber(r.Number)).Bold().SingleLine()
+					if r.Missed() {
+						name.TextColor(p.Red)
+					}
+					ui.Text(c, joinDot(transportName(r.Transport), a.lineName(r.DeviceID), formatDuration(r.DurationSeconds))).FontSize(11).TextColor(p.Secondary).SingleLine()
+				})
+				ui.Text(c, relTime(r.StartedAt, a.now())).FontSize(12).TextColor(p.Secondary)
+				if isDialable(r.Number) {
+					b := ui.Box(c).Size(28, 28).Radius(14).Center().Cursor(ui.CursorPointer).Role(ui.RoleButton).Label(fmt.Sprintf("回拨 %s", r.Number)).Tooltip("回拨")
+					if b.Hovered() {
+						b.Background(p.Fill)
+					}
+					b.Children(func() { ui.Icon(c, icPhone).FontSize(16).TextColor(c.Theme().Accent) })
+					if b.Clicked() {
+						a.dialLine = r.DeviceID
+						a.dialed = r.Number
+						a.dial(r.Number)
+					}
+				}
 			})
-			ui.Text(c, relTime(r.StartedAt, a.now())).FontSize(12).TextColor(p.Secondary)
-			if isDialable(r.Number) {
-				b := ui.Box(c).Size(30, 30).Radius(15).Center().Cursor(ui.CursorPointer).Role(ui.RoleButton).Label(fmt.Sprintf("回拨 %s", r.Number)).Tooltip("回拨")
-				if b.Hovered() {
-					b.Background(p.Fill)
-				}
-				b.Children(func() { ui.Icon(c, icPhone).FontSize(16).TextColor(c.Theme().Accent) })
-				if b.Clicked() {
-					a.dialLine = r.DeviceID
-					a.dialed = r.Number
-					a.dial(r.Number)
-				}
-			}
-		})
-	}).Grow(1).Children(func() {
-		if len(list) == 0 {
-			title := "没有通话记录"
-			if a.phoneTab == 1 {
-				title = "没有未接来电"
-			}
-			emptyState(c, p, icPhone, title, "")
 		}
 	})
 }
@@ -179,7 +219,7 @@ func (a *app) lineName(id string) string {
 func transportName(t string) string {
 	switch t {
 	case "vowifi":
-		return "WiFi 通话"
+		return "Wi-Fi Calling"
 	case "cellular":
 		return "蜂窝"
 	}

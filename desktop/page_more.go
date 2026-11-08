@@ -164,7 +164,7 @@ func levelTone(p palette, level string) color {
 func (a *app) settingsPage(c *ui.Context, p palette) {
 	t := c.Theme()
 	pageScroll(c, func() {
-		ui.Column(c).MaxWidth(640).Gap(18).Children(func() {
+		ui.Column(c).Gap(18).Children(func() {
 			section(c, p, "账户", func() {
 				row(c, p, false, func() {
 					ui.Avatar(c, a.user, nil).Size(40, 40)

@@ -38,11 +38,14 @@ type Modem struct {
 }
 
 type VoWiFiRuntime struct {
-	Phase      string `json:"phase"`
-	IMSReady   bool   `json:"ims_ready"`
-	SMSReady   bool   `json:"sms_ready"`
-	LocalPhone string `json:"local_phone"`
-	LastError  string `json:"last_error"`
+	Phase       string `json:"phase"`
+	SIMReady    bool   `json:"sim_ready"`
+	AccessReady bool   `json:"access_ready"`
+	TunnelReady bool   `json:"tunnel_ready"`
+	IMSReady    bool   `json:"ims_ready"`
+	SMSReady    bool   `json:"sms_ready"`
+	LocalPhone  string `json:"local_phone"`
+	LastError   string `json:"last_error"`
 }
 
 type Device struct {

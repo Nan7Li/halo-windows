@@ -7,8 +7,7 @@ import (
 
 func (a *app) loginView(c *ui.Context, p palette) {
 	t := c.Theme()
-	ui.Box(c).Fill().Children(func() {
-		wallpaper(c, p)
+	wallpaper(c, p, ui.Box(c).Fill()).Children(func() {
 		ui.Box(c).Absolute().Top(0).Left(0).Right(0).Height(max(c.TitleBar().Height, 36)).DragWindow()
 		ui.Column(c).Fill().Center().Children(func() {
 			card := ui.Column(c).Width(380).Padding(28, 28, 24).Gap(14).Radius(26).Material(glass.Glass{Clarity: 0.2})

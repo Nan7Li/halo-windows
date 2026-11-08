@@ -70,7 +70,7 @@ func TestPreviewWalksEveryPage(t *testing.T) {
 		want := map[string]string{
 			pageToday:    "Intel Celeron J3160",
 			pageMessages: "Alex Chen",
-			pagePhone:    "最近通话",
+			pagePhone:    "未接 · 1",
 			pageDevices:  "EC25 · 主卡",
 			pageNetwork:  "home-core",
 			pageLogs:     "IMS registered on Vodafone UK ePDG",

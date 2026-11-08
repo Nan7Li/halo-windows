@@ -11,6 +11,7 @@ type palette struct {
 	Grouped, Card, Fill, FillPressed, Separator  color
 	Label, Secondary, Tertiary                   color
 	Blue, Green, Orange, Red, Indigo, Teal, Gray color
+	Pink, Purple, Yellow                         color
 	BubbleOther                                  color
 }
 
@@ -26,6 +27,7 @@ func paletteFor(dark bool) palette {
 			Label:     ui.Hex("#FFFFFF"), Secondary: ui.RGBA(235, 235, 245, 0.6), Tertiary: ui.RGBA(235, 235, 245, 0.3),
 			Blue: ui.Hex("#0A84FF"), Green: ui.Hex("#30D158"), Orange: ui.Hex("#FF9F0A"), Red: ui.Hex("#FF453A"),
 			Indigo: ui.Hex("#5E5CE6"), Teal: ui.Hex("#40C8E0"), Gray: ui.Hex("#8E8E93"),
+			Pink: ui.Hex("#FF375F"), Purple: ui.Hex("#BF5AF2"), Yellow: ui.Hex("#FFD60A"),
 			BubbleOther: ui.Hex("#26252A"),
 		}
 	}
@@ -36,6 +38,7 @@ func paletteFor(dark bool) palette {
 		Label:     ui.Hex("#000000"), Secondary: ui.RGBA(60, 60, 67, 0.6), Tertiary: ui.RGBA(60, 60, 67, 0.3),
 		Blue: ui.Hex("#007AFF"), Green: ui.Hex("#34C759"), Orange: ui.Hex("#FF9500"), Red: ui.Hex("#FF3B30"),
 		Indigo: ui.Hex("#5856D6"), Teal: ui.Hex("#30B0C7"), Gray: ui.Hex("#8E8E93"),
+		Pink: ui.Hex("#FF2D55"), Purple: ui.Hex("#AF52DE"), Yellow: ui.Hex("#FFCC00"),
 		BubbleOther: ui.Hex("#E9E9EB"),
 	}
 }
@@ -111,7 +114,9 @@ func (a *app) applyTheme(c *ui.Context) palette {
 	t.Danger = p.Red
 	t.Success = p.Green
 	t.Warning = p.Orange
-	t.Radius = 8
+	t.Radius = 7
+	// macOS's body text (SF Pro 13): the web UI's desktop metrics.
+	t.FontSize = 13
 	t.InactiveAccent = t.Accent
 	c.SetTheme(&t)
 	return p

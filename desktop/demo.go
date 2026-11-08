@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // The preview shows the app with made-up data, without a server.
 
@@ -26,7 +29,7 @@ func demoDevices() []Device {
 			ID: "ec25", Name: "EC25 · 主卡", DeviceType: "quectel", Running: true, Healthy: true, ControlOnline: true,
 			PublicIP: "114.247.12.8", SMSEnabled: true, VoWiFiEnabled: true, VoWiFiActive: true, RadioMode: "vowifi",
 			NetworkConnected: true, Registration: "registered",
-			VoWiFi: VoWiFiRuntime{Phase: "ready", IMSReady: true, SMSReady: true, LocalPhone: "+447700900123"},
+			VoWiFi: VoWiFiRuntime{Phase: "ready", SIMReady: true, AccessReady: true, TunnelReady: true, IMSReady: true, SMSReady: true, LocalPhone: "+447700900123"},
 			Modem:  Modem{Operator: "Vodafone UK", NetworkMode: "LTE", RadioBand: "B20", SignalDbm: -87, SignalSinr: 14, IMEI: "860000000000001", ICCID: "8944100000000002201", Model: "EC25-EUX"},
 		},
 		{
@@ -100,4 +103,16 @@ func demoLogs(now time.Time) []LogEntry {
 		{Time: now.Add(-3 * time.Minute), Level: "debug", Message: "QMI WDS start-network cid=17"},
 		{Time: now.Add(-1 * time.Minute), Level: "error", Message: "ePDG probe timed out after 5s (epdg.epc.mnc015.mcc234.pub.3gppnetwork.org)"},
 	}
+}
+
+func demoNetHistory() [][2]float64 {
+	out := make([][2]float64, 40)
+	for i := range out {
+		x := float64(i)
+		out[i] = [2]float64{
+			90_000 + 45_000*math.Sin(x/4) + 20_000*math.Sin(x/1.7),
+			40_000 + 18_000*math.Sin(x/3+1) + 8_000*math.Cos(x/1.3),
+		}
+	}
+	return out
 }
